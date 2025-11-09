@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Models (large files - may want to track separately)
+models/*.pkl
+
+# Output files (regenerated)
+output/visuals/*.png
+output/manual/*.png
+output/text/*.png
+
+# Keep directory structure
+!output/visuals/.gitkeep
+!output/manual/.gitkeep
+!output/text/.gitkeep
+
+# Zone Identifier (Windows metadata)
+*.Zone.Identifier
+
+# AWS credentials
+.aws/
+*.pem
+*.key
+
+# Temporary files
+*.tmp
+*.log
+.cache/
