@@ -18,44 +18,56 @@ from typing import Dict, List, Tuple, Optional
 plt.style.use('seaborn-v0_8-whitegrid')
 
 
-def load_conversation_from_json(json_path: str) -> List[str]:
+def load_conversation_from_json(filepath, speaker_filter='llm'):
     """
-    Load a conversation from a JSON file and extract LLM responses.
+    Load a conversation from a JSON file.
+    
+    Expected JSON format:
+    {
+        "conversation": [
+            {"turn": 1, "speaker": "user", "message": "Hello"},
+            {"turn": 2, "speaker": "llm", "message": "Hi there!"},
+            ...
+        ]
+    }
     
     Args:
-        json_path (str): Path to the JSON file containing the conversation
+        filepath (str): Path to the JSON file
+        speaker_filter (str): Which speaker to extract - 'user', 'llm', or 'both'
         
     Returns:
-        List[str]: List of LLM response texts from the conversation
-        
-    Raises:
-        FileNotFoundError: If the JSON file doesn't exist
-        ValueError: If the JSON structure is invalid
+        list: List of text messages from the conversation
     """
-    if not os.path.exists(json_path):
-        raise FileNotFoundError(f"JSON file not found: {json_path}")
-    
     try:
-        with open(json_path, 'r', encoding='utf-8') as f:
+        with open(filepath, 'r') as f:
             data = json.load(f)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in file {json_path}: {e}")
-    
-    if 'conversation' not in data:
-        raise ValueError(f"JSON file must contain a 'conversation' key: {json_path}")
-    
-    # Extract only LLM responses
-    llm_responses = []
-    for turn in data['conversation']:
-        if turn.get('speaker') == 'llm':
+        
+        if 'conversation' not in data:
+            raise ValueError(f"JSON file must contain a 'conversation' key")
+        
+        messages = []
+        for turn in data['conversation']:
+            speaker = turn.get('speaker', '').lower()
             message = turn.get('message', '')
-            if message:
-                llm_responses.append(message)
-    
-    if not llm_responses:
-        raise ValueError(f"No LLM responses found in conversation: {json_path}")
-    
-    return llm_responses
+            
+            if not message:
+                continue
+            
+            if speaker_filter == 'both':
+                messages.append(message)
+            elif speaker == speaker_filter:
+                messages.append(message)
+        
+        if not messages:
+            raise ValueError(f"No messages found for speaker filter '{speaker_filter}' in conversation")
+        
+        print(f"✓ Loaded {len(messages)} messages (speaker={speaker_filter}) from conversation")
+        return messages
+        
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in file {filepath}: {e}")
+    except FileNotFoundError:
+        raise ValueError(f"File not found: {filepath}")
 
 
 class VectorPrecogntion:
@@ -410,6 +422,8 @@ Examples:
                         help='Path(s) to conversation JSON file(s). Each file must contain a "conversation" key with turn-by-turn dialogue.')
     parser.add_argument('--labels', nargs='+', metavar='LABEL',
                         help='Optional labels for each conversation (for plot annotations). Must match number of conversation files.')
+    parser.add_argument('--speaker', choices=['user', 'llm', 'both'], default='llm',
+                        help='Which speaker to analyze: user (prompts), llm (responses), or both (default: llm)')
     parser.add_argument('--vsafe-text', type=str, 
                         default="I'm designed to be helpful, harmless, and honest.",
                         help='Text to define VSAFE vector (default: "I\'m designed to be helpful, harmless, and honest.")')
@@ -493,8 +507,8 @@ Examples:
         
         try:
             # Load conversation texts from JSON
-            llm_responses = load_conversation_from_json(json_path)
-            print(f"✓ Loaded {len(llm_responses)} LLM responses from conversation\n")
+            messages = load_conversation_from_json(json_path, speaker_filter=args.speaker)
+            print(f"✓ Loaded {len(messages)} messages (speaker={args.speaker}) from conversation\n")
             
             # Initialize Vector Precognition for this conversation
             convo = VectorPrecogntion(vsafe=VSAFE, weights=WEIGHTS)
@@ -503,7 +517,7 @@ Examples:
             if mode == 'text':
                 print("Converting texts to 2D vectors...")
                 vectors = []
-                for i, text in enumerate(llm_responses):
+                for i, text in enumerate(messages):
                     preview = text[:60] + "..." if len(text) > 60 else text
                     print(f"  Turn {i+1}: '{preview}'")
                     vec = pipeline.get_2d_vector(text)

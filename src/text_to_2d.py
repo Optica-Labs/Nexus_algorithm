@@ -60,20 +60,32 @@ class TextTo2DPipeline:
         Returns:
             2D numpy array [x, y] or None if embedding fails
         """
+        print(f"\n[Text-to-2D Pipeline]")
+        print(f"  Input text: '{text[:80]}...'")
+        print(f"  Region: {self.region_name}")
+        
         # Step 1: Get high-dimensional embedding from Bedrock
+        print(f"  Step 1/3: Getting embedding from Bedrock...")
         high_dim_vector = get_titan_embedding(text, self.region_name)
         
         if high_dim_vector is None:
+            print(f"  [FAILED] Could not get embedding from Bedrock")
             return None
+        
+        print(f"  ✓ Embedding received, dimension: {len(high_dim_vector)}")
         
         # Step 2: Reshape for scaler (expects 2D array)
         high_dim_vector_batch = high_dim_vector.reshape(1, -1)
         
         # Step 3: Apply the same scaling used during training
+        print(f"  Step 2/3: Applying StandardScaler...")
         scaled_vector = self.scaler.transform(high_dim_vector_batch)
+        print(f"  ✓ Scaled")
         
         # Step 4: Apply the same PCA transformation
+        print(f"  Step 3/3: Applying PCA transformation...")
         vector_2d = self.pca_model.transform(scaled_vector)
+        print(f"  ✓ 2D vector: [{vector_2d[0][0]:.4f}, {vector_2d[0][1]:.4f}]")
         
         # Return as 1D array [x, y]
         return vector_2d[0]

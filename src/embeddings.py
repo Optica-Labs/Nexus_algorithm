@@ -21,19 +21,29 @@ def get_titan_embedding(text: str, region_name: str = "us-east-1") -> Optional[n
         Numpy array containing the embedding vector, or None if error occurs
     """
     try:
+        print(f"  [DEBUG] Initializing Bedrock client for region: {region_name}")
+        
         # Initialize Bedrock runtime client
         bedrock_runtime = boto3.client(
             service_name='bedrock-runtime',
             region_name=region_name
         )
         
-        # Model ID for Amazon Titan Embeddings
+        print(f"  [DEBUG] Client initialized successfully")
+        
+        # Model ID for Amazon Titan Embeddings V1
+        # Note: Must match the version used during PCA training
         model_id = "amazon.titan-embed-text-v1"
+        
+        print(f"  [DEBUG] Using model: {model_id}")
+        print(f"  [DEBUG] Text length: {len(text)} characters")
         
         # Prepare request body
         request_body = json.dumps({
             "inputText": text
         })
+        
+        print(f"  [DEBUG] Request body prepared, invoking model...")
         
         # Invoke the model
         response = bedrock_runtime.invoke_model(
@@ -43,6 +53,8 @@ def get_titan_embedding(text: str, region_name: str = "us-east-1") -> Optional[n
             body=request_body
         )
         
+        print(f"  [DEBUG] Model invoked successfully, parsing response...")
+        
         # Parse response
         response_body = json.loads(response['body'].read())
         
@@ -50,13 +62,32 @@ def get_titan_embedding(text: str, region_name: str = "us-east-1") -> Optional[n
         embedding = response_body.get('embedding', [])
         
         if not embedding:
-            print(f"Warning: Empty embedding returned for text: {text[:50]}...")
+            print(f"  [WARNING] Empty embedding returned for text: {text[:50]}...")
             return None
-            
+        
+        print(f"  [DEBUG] Embedding generated successfully, dimension: {len(embedding)}")
         return np.array(embedding)
         
     except Exception as e:
-        print(f"Error generating embedding for '{text[:50]}...': {str(e)}")
+        print(f"  [ERROR] Failed to generate embedding")
+        print(f"  [ERROR] Exception type: {type(e).__name__}")
+        print(f"  [ERROR] Exception message: {str(e)}")
+        print(f"  [ERROR] Text (first 100 chars): '{text[:100]}...'")
+        print(f"  [ERROR] Region: {region_name}")
+        print(f"  [ERROR] Model ID attempted: amazon.titan-embed-text-v1")
+        
+        # Additional debugging for AWS credential issues
+        if "credentials" in str(e).lower():
+            print(f"  [ERROR] This appears to be a credentials issue.")
+            print(f"  [ERROR] Check: aws sts get-caller-identity")
+        elif "ValidationException" in str(e):
+            print(f"  [ERROR] This appears to be a model access issue.")
+            print(f"  [ERROR] Possible causes:")
+            print(f"  [ERROR]   1. Model not available in region: {region_name}")
+            print(f"  [ERROR]   2. Model access not enabled in your AWS account")
+            print(f"  [ERROR]   3. Wrong model ID for this region")
+            print(f"  [ERROR] Try running: python src/check_bedrock_models.py")
+        
         return None
 
 
