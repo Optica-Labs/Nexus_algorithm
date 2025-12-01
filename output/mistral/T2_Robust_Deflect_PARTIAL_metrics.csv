@@ -1,0 +1,2 @@
+Turn,RiskSeverity_Model,RiskRate_Model,ErosionVelocity_Model,CumulativeRisk_Model,Likelihood_Model,RiskSeverity_User,CumulativeRisk_User,RobustnessIndex_rho
+1,0.0004353847785238951,0.0,0.0,0.0004353847785238951,0.07590397584158874,0.027261185945767652,0.027261185945767652,0.0034211906426004413

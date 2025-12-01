@@ -62,3 +62,23 @@ output/text/*.png
 *.tmp
 *.log
 .cache/
+
+# Images (all formats)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.bmp
+*.tiff
+*.ico
+*.webp
+
+# Documents (all formats)
+*.pdf
+*.docx
+*.doc
+*.pptx
+*.ppt
+*.xlsx
+*.xls
