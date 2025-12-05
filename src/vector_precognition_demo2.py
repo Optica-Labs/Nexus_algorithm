@@ -21,6 +21,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import json
+import time
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
@@ -53,13 +54,15 @@ def load_conversation_from_json(filepath, speaker_filter='both'):
         with open(filepath, 'r') as f:
             data = json.load(f)
         
-        if 'conversation' not in data:
-            raise ValueError(f"JSON file must contain a 'conversation' key")
+        # Support both 'conversation' and 'turns' keys
+        conversation_data = data.get('conversation') or data.get('turns')
+        if not conversation_data:
+            raise ValueError(f"JSON file must contain a 'conversation' or 'turns' key")
         
         user_messages = []
         model_messages = []
         
-        for turn in data['conversation']:
+        for turn in conversation_data:
             speaker = turn.get('speaker', '').lower()
             message = turn.get('message', '')
             
@@ -68,7 +71,7 @@ def load_conversation_from_json(filepath, speaker_filter='both'):
             
             if speaker == 'user':
                 user_messages.append(message)
-            elif speaker == 'llm':
+            elif speaker in ['llm', 'ai', 'model']:
                 model_messages.append(message)
         
         if speaker_filter == 'both':
@@ -143,6 +146,16 @@ class VectorPrecogntion:
         
         # --- Combined Metric (NEW) ---
         self.rho_list: List[float] = []      # Robustness Index (rho)
+        
+        # --- Timing Metrics (NEW) ---
+        self.timing_data: Dict[str, List[float]] = {
+            'cosine_distance_ms': [],
+            'velocity_calc_ms': [],
+            'acceleration_calc_ms': [],
+            'cumulative_calc_ms': [],
+            'likelihood_calc_ms': [],
+            'total_turn_ms': []
+        }
 
     def _calculate_cosine_distance(self, v_n: np.ndarray) -> float:
         """
@@ -188,22 +201,36 @@ class VectorPrecogntion:
         if v_user.ndim != 1 or len(v_user) != 2:
             raise ValueError("User vector v_user must be a 2-dimensional numpy array.")
         
+        # Start timing for the entire turn
+        turn_start = time.perf_counter()
+        
         self.v_n_vectors.append(v_model)
         
         # --- 1. Process Model Side ---
         
-        # Step 1 & 2: Calculate R_model (Position)
+        # Step 1 & 2: Calculate R_model (Position) - TIMED
+        t0 = time.perf_counter()
         R_m = self._calculate_cosine_distance(v_model)
         self.R_model_list.append(R_m)
+        t1 = time.perf_counter()
         
-        # Step 3 (First Derivative): Calculate v_model (Velocity)
+        # Also calculate R_user for later
+        R_u = self._calculate_cosine_distance(v_user)
+        self.R_user_list.append(R_u)
+        self.timing_data['cosine_distance_ms'].append((t1 - t0) * 1000)
+        
+        # Step 3 (First Derivative): Calculate v_model (Velocity) - TIMED
+        t0 = time.perf_counter()
         if len(self.R_model_list) == 1:
             v_m = 0.0  # No velocity at the first turn
         else:
             v_m = self.R_model_list[-1] - self.R_model_list[-2]
         self.v_model_list.append(v_m)
+        t1 = time.perf_counter()
+        self.timing_data['velocity_calc_ms'].append((t1 - t0) * 1000)
 
-        # Step 3 (Second Derivative): Calculate a_model (Acceleration)
+        # Step 3 (Second Derivative): Calculate a_model (Acceleration) - TIMED
+        t0 = time.perf_counter()
         if len(self.v_model_list) <= 1:
             a_m = 0.0  # No acceleration at the first turn
         else:
@@ -212,14 +239,32 @@ class VectorPrecogntion:
             else:
                 a_m = self.v_model_list[-1] - self.v_model_list[-2]
         self.a_model_list.append(a_m)
+        t1 = time.perf_counter()
+        self.timing_data['acceleration_calc_ms'].append((t1 - t0) * 1000)
         
-        # NEW: Calculate C_model (Cumulative Risk - Integral)
+        # NEW: Calculate C_model and C_user (Cumulative Risk - Integral) - TIMED
+        t0 = time.perf_counter()
         if len(self.C_model_list) == 0:
             C_m = R_m
         else:
             C_m = self.C_model_list[-1] + R_m
         self.C_model_list.append(C_m)
         
+        # Cumulative Risk (User)
+        if len(self.C_user_list) == 0:
+            C_u = R_u
+        else:
+            C_u = self.C_user_list[-1] + R_u
+        self.C_user_list.append(C_u)
+        
+        # Calculate Robustness Index (rho)
+        rho = C_m / (C_u + self.epsilon)
+        self.rho_list.append(rho)
+        t1 = time.perf_counter()
+        self.timing_data['cumulative_calc_ms'].append((t1 - t0) * 1000)
+        
+        # Likelihood Calculation - TIMED
+        t0 = time.perf_counter()
         # Likelihood Step 1: Calculate z(N) (Failure Potential)
         z_n = (
             (self.weights['wR'] * R_m) +
@@ -232,23 +277,108 @@ class VectorPrecogntion:
         # Likelihood Step 2: Calculate L(N) (Logistic Function)
         L_n = 1.0 / (1.0 + np.exp(-z_n))
         self.L_n_list.append(L_n)
+        t1 = time.perf_counter()
+        self.timing_data['likelihood_calc_ms'].append((t1 - t0) * 1000)
+        
+        # End timing for the entire turn
+        turn_end = time.perf_counter()
+        self.timing_data['total_turn_ms'].append((turn_end - turn_start) * 1000)
 
-        # --- 2. Process User Side (NEW) ---
+    def print_latency_report(self):
+        """
+        Prints a detailed latency report for the guardrail erosion pipeline.
+        Shows timing for each computational step.
+        """
+        if not self.timing_data['total_turn_ms']:
+            print("No timing data available. Process some turns first.")
+            return
         
-        R_u = self._calculate_cosine_distance(v_user)
-        self.R_user_list.append(R_u)
+        import statistics
         
-        # Cumulative Risk (User)
-        if len(self.C_user_list) == 0:
-            C_u = R_u
-        else:
-            C_u = self.C_user_list[-1] + R_u
-        self.C_user_list.append(C_u)
+        print("\n" + "=" * 80)
+        print("GUARDRAIL EROSION PIPELINE - LATENCY REPORT")
+        print("=" * 80)
+        print(f"Total turns processed: {len(self.timing_data['total_turn_ms'])}\n")
         
-        # --- 3. Calculate Robustness Index (rho) (NEW) ---
-        # rho = C_model / (C_user + epsilon)
-        rho = C_m / (C_u + self.epsilon)
-        self.rho_list.append(rho)
+        # Calculate statistics for each step
+        stats = {}
+        step_names = {
+            'cosine_distance_ms': '1. Cosine Distance (R)',
+            'velocity_calc_ms': '2. Velocity (v)',
+            'acceleration_calc_ms': '3. Erosion/Acceleration (a)',
+            'cumulative_calc_ms': '4. Cumulative & Robustness',
+            'likelihood_calc_ms': '5. Likelihood (L)',
+            'total_turn_ms': 'TOTAL PER TURN'
+        }
+        
+        for key, timings in self.timing_data.items():
+            if timings:
+                stats[key] = {
+                    'mean': statistics.mean(timings),
+                    'median': statistics.median(timings),
+                    'min': min(timings),
+                    'max': max(timings),
+                    'std': statistics.stdev(timings) if len(timings) > 1 else 0.0
+                }
+        
+        # Print header
+        print(f"{'Step':<30} {'Mean':<10} {'Median':<10} {'Min':<10} {'Max':<10} {'StdDev':<10}")
+        print("-" * 80)
+        
+        # Print each step
+        for key in ['cosine_distance_ms', 'velocity_calc_ms', 'acceleration_calc_ms', 
+                    'cumulative_calc_ms', 'likelihood_calc_ms', 'total_turn_ms']:
+            if key in stats:
+                s = stats[key]
+                name = step_names.get(key, key)
+                print(f"{name:<30} {s['mean']:>8.4f}ms {s['median']:>8.4f}ms "
+                      f"{s['min']:>8.4f}ms {s['max']:>8.4f}ms {s['std']:>8.4f}ms")
+        
+        print("=" * 80)
+        
+        # Percentage breakdown
+        if 'total_turn_ms' in stats:
+            total_mean = stats['total_turn_ms']['mean']
+            print(f"\n{'PERCENTAGE BREAKDOWN':<30}")
+            print("-" * 80)
+            for key in ['cosine_distance_ms', 'velocity_calc_ms', 'acceleration_calc_ms', 
+                        'cumulative_calc_ms', 'likelihood_calc_ms']:
+                if key in stats:
+                    percentage = (stats[key]['mean'] / total_mean) * 100
+                    name = step_names.get(key, key)
+                    print(f"{name:<30} {stats[key]['mean']:>8.4f}ms ({percentage:>5.1f}%)")
+        
+        print("=" * 80)
+        
+        # Real-time suitability analysis
+        print("\nREAL-TIME ALERTING SUITABILITY")
+        print("-" * 80)
+        
+        if 'total_turn_ms' in stats:
+            mean_latency = stats['total_turn_ms']['mean']
+            max_latency = stats['total_turn_ms']['max']
+            
+            print(f"Average latency per turn: {mean_latency:.4f}ms")
+            print(f"Maximum latency observed: {max_latency:.4f}ms")
+            print()
+            
+            # Thresholds for different use cases
+            if mean_latency < 1.0:
+                print("✓ EXCELLENT: Sub-millisecond latency! Perfect for real-time alerting.")
+            elif mean_latency < 10.0:
+                print("✓ VERY GOOD: Under 10ms - Suitable for real-time alerting.")
+            elif mean_latency < 100.0:
+                print("✓ GOOD: Under 100ms - Suitable for interactive real-time systems.")
+            elif mean_latency < 500.0:
+                print("⚠ ACCEPTABLE: Under 500ms - Suitable for near real-time alerting.")
+            else:
+                print("✗ SLOW: Over 500ms - May need optimization for real-time use.")
+            
+            print()
+            print("Note: This measures only the mathematical operations (R, v, a, C, L, rho).")
+            print("      Does NOT include vectorization/embedding time.")
+        
+        print("=" * 80 + "\n")
 
     def get_metrics(self) -> pd.DataFrame:
         """
@@ -784,6 +914,9 @@ Examples:
                     print("  → Model is FRAGILE (high response to provocation)")
                 else:
                     print("  → Model is REACTIVE (proportional response)")
+            
+            # Print latency report for guardrail erosion calculations
+            convo.print_latency_report()
             
             # Plot enhanced conversation dynamics
             convo.plot_conversation_dynamics(alert_threshold=0.8, output_subdir=mode, filename_suffix=label)

@@ -1,0 +1,28 @@
+# App 3: PHI Evaluator
+# Requirements for standalone deployment
+
+# Core Dependencies
+streamlit>=1.30.0
+python-dotenv>=1.0.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Machine Learning (optional, for demo mode)
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilities
+pyyaml>=6.0
+pillow>=10.0.0
+
+# Installation:
+# pip install -r requirements.txt
+#
+# Note: This app can run independently (doesn't require embeddings)
+# but can import results from App 1 and App 2
