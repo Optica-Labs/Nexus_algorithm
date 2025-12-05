@@ -39,6 +39,7 @@ sys.path.insert(0, str(current_app_dir))
 
 # Import App 2's own modules
 from core.robustness_calculator import RobustnessCalculator
+from core.vector_processor import VectorPrecognitionProcessor  # App2's own full-featured processor
 from utils.helpers import (
     load_metrics_from_csv, load_metrics_from_json,
     load_multiple_files, export_rho_summary_to_csv,
@@ -47,17 +48,9 @@ from utils.helpers import (
     extract_from_app1_results
 )
 
-# Import from App 1 using importlib to avoid path conflicts
+# Import helper functions from App 1 using importlib
 import importlib.util
 import sys as system
-
-app1_core_spec = importlib.util.spec_from_file_location(
-    "app1_core",
-    deployment_root / 'app1_guardrail_erosion' / 'core' / 'vector_processor.py'
-)
-app1_core = importlib.util.module_from_spec(app1_core_spec)
-app1_core_spec.loader.exec_module(app1_core)
-VectorPrecognitionProcessor = app1_core.VectorPrecognitionProcessor
 
 app1_helpers_spec = importlib.util.spec_from_file_location(
     "app1_helpers",

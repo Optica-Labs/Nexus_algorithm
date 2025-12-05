@@ -1,0 +1,166 @@
+version: '3.8'
+
+# Vector Precognition Deployment Suite - Docker Compose Configuration
+# This file orchestrates all 4 applications with proper networking and volume management
+
+services:
+  # ===========================================================================
+  # App 1: Guardrail Erosion Analyzer
+  # ===========================================================================
+  app1-guardrail-erosion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app1
+    container_name: vp-app1-guardrail-erosion
+    ports:
+      - "8501:8501"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-10}
+    volumes:
+      - ./models:/app/models:ro  # Read-only model files
+      - app1-output:/app/app1_guardrail_erosion/output  # Persistent output
+      - ./shared:/app/shared:ro  # Shared modules
+    networks:
+      - vp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.vectorprecognition.app=guardrail-erosion"
+      - "com.vectorprecognition.description=Turn-by-turn AI conversation safety analysis"
+
+  # ===========================================================================
+  # App 2: RHO Calculator
+  # ===========================================================================
+  app2-rho-calculator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app2
+    container_name: vp-app2-rho-calculator
+    ports:
+      - "8502:8502"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./models:/app/models:ro
+      - app2-output:/app/app2_rho_calculator/output
+      - ./shared:/app/shared:ro
+      - app1-output:/app/app1_output:ro  # Access App 1 outputs
+    networks:
+      - vp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8502/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.vectorprecognition.app=rho-calculator"
+      - "com.vectorprecognition.description=Model robustness calculation per conversation"
+
+  # ===========================================================================
+  # App 3: PHI Evaluator
+  # ===========================================================================
+  app3-phi-evaluator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app3
+    container_name: vp-app3-phi-evaluator
+    ports:
+      - "8503:8503"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./models:/app/models:ro
+      - app3-output:/app/app3_phi_evaluator/output
+      - ./shared:/app/shared:ro
+      - app2-output:/app/app2_output:ro  # Access App 2 outputs
+    networks:
+      - vp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8503/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.vectorprecognition.app=phi-evaluator"
+      - "com.vectorprecognition.description=Model fragility benchmarking across conversations"
+
+  # ===========================================================================
+  # App 4: Unified Dashboard
+  # ===========================================================================
+  app4-unified-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app4
+    container_name: vp-app4-unified-dashboard
+    ports:
+      - "8504:8504"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - GPT35_ENDPOINT=${GPT35_ENDPOINT}
+      - GPT4_ENDPOINT=${GPT4_ENDPOINT}
+      - CLAUDE_ENDPOINT=${CLAUDE_ENDPOINT}
+      - MISTRAL_ENDPOINT=${MISTRAL_ENDPOINT}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SESSION_TIMEOUT_MINUTES=${SESSION_TIMEOUT_MINUTES:-60}
+    volumes:
+      - ./models:/app/models:ro
+      - app4-output:/app/app4_unified_dashboard/output
+      - ./shared:/app/shared:ro
+    networks:
+      - vp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8504/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.vectorprecognition.app=unified-dashboard"
+      - "com.vectorprecognition.description=End-to-end AI safety monitoring with live chat"
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  vp-network:
+    driver: bridge
+    name: vector-precognition-network
+
+# =============================================================================
+# Volumes - Persistent storage for outputs
+# =============================================================================
+volumes:
+  app1-output:
+    name: vp-app1-output
+  app2-output:
+    name: vp-app2-output
+  app3-output:
+    name: vp-app3-output
+  app4-output:
+    name: vp-app4-output

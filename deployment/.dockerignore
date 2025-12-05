@@ -1,0 +1,83 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Documentation (not needed in container)
+*.md
+!README.md
+docs/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Environment files (use .env at runtime)
+.env
+
+# Logs
+*.log
+logs/
+
+# Output directories (use volumes instead)
+output/
+*/output/
+test_output/
+
+# Test data (mount at runtime if needed)
+test_data/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+tmp/
+temp/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Shell scripts (not needed in container)
+*.sh
+!start_*.sh
+
+# Large data files (mount at runtime)
+*.csv
+*.json
+*.pkl
+!models/*.pkl
+
+# API test files
+test_api_endpoints.py
+
+# Setup files
+setup_testing.sh

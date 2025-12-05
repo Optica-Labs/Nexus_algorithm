@@ -58,6 +58,11 @@ output/text/*.png
 *.pem
 *.key
 
+# Environment files with secrets
+.env
+deployment/.env
+**/.env
+
 # Temporary files
 *.tmp
 *.log

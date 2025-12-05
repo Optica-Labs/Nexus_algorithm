@@ -183,7 +183,12 @@ class LLMAPIClient:
             return f"Error: {str(e)}", False
 
     def _call_aws_lambda(self, temperature: float, max_tokens: int) -> str:
-        """Call AWS Lambda API Gateway endpoint."""
+        """
+        Call AWS Lambda API Gateway endpoint.
+
+        Note: These Lambda endpoints are stateless and only handle single messages.
+        They do NOT maintain conversation history server-side.
+        """
         if not self.config.endpoint_url:
             raise ValueError("AWS Lambda endpoint URL not configured")
 
@@ -191,30 +196,25 @@ class LLMAPIClient:
             "Content-Type": "application/json"
         }
 
-        # Build conversation history for the API
-        conversation = []
-        for msg in self.messages:
-            if msg['role'] == 'system':
-                # Some models might not support system messages via Lambda
-                # Prepend to first user message instead
-                if conversation and conversation[-1]['role'] == 'user':
-                    conversation[-1]['content'] = f"{msg['content']}\n\n{conversation[-1]['content']}"
-                else:
-                    conversation.append({
-                        'role': 'user',
-                        'content': msg['content']
-                    })
-            else:
-                conversation.append(msg)
+        # Get the last user message (the endpoint only accepts single messages)
+        last_user_message = None
+        for msg in reversed(self.messages):
+            if msg['role'] == 'user':
+                last_user_message = msg['content']
+                break
 
-        # Format payload for AWS Lambda endpoint
+        if not last_user_message:
+            raise ValueError("No user message found to send")
+
+        # Simple payload format: just the message
+        # The Lambda endpoint expects: {"message": "text"}
         payload = {
-            "conversation": conversation,
-            "temperature": temperature,
-            "max_tokens": max_tokens
+            "message": last_user_message
         }
 
         logger.info(f"Calling AWS Lambda endpoint: {self.config.endpoint_url}")
+        logger.debug(f"Payload: {payload}")
+
         response = requests.post(
             self.config.endpoint_url,
             headers=headers,
@@ -224,17 +224,18 @@ class LLMAPIClient:
         response.raise_for_status()
 
         data = response.json()
+        logger.debug(f"Response: {data}")
 
-        # Extract response based on Lambda return format
-        # Adjust this based on your Lambda function's response structure
-        if 'response' in data:
-            return data['response']
-        elif 'message' in data:
+        # Extract response from Lambda return format
+        # Expected format: {"message": "...", "session_id": "...", "timestamp": "..."}
+        if 'message' in data:
             return data['message']
+        elif 'response' in data:
+            return data['response']
         elif 'body' in data:
             # If Lambda returns API Gateway format
             body = json.loads(data['body']) if isinstance(data['body'], str) else data['body']
-            return body.get('response', body.get('message', str(body)))
+            return body.get('message', body.get('response', str(body)))
         else:
             logger.warning(f"Unexpected Lambda response format: {data}")
             return str(data)
