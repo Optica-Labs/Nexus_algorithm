@@ -6,6 +6,10 @@ python src/precog_validation_test_api.py
 # Test only GPT-3.5
 python src/precog_validation_test_api.py --model gpt-3.5
 
+
+python src/precog_validation_test_api.py --model gpt-4
+
+
 # Test only Mistral
 python src/precog_validation_test_api.py --model mistral
 

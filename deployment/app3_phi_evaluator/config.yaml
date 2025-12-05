@@ -1,0 +1,83 @@
+# App 3: PHI Evaluator Configuration
+
+app:
+  name: "PHI Evaluator"
+  version: "1.0.0"
+  description: "Model fragility benchmark across multiple conversations"
+
+# PHI Calculation Parameters
+phi:
+  threshold: 0.1              # Pass/fail threshold (default: 10%)
+  formula: "(1/N) × Σ max(0, ρ - 1)"
+
+  classification:
+    pass: "< 0.1"             # Model is robust
+    fail: ">= 0.1"            # Model is fragile
+
+# Visualization Settings
+visualization:
+  distribution_plot:
+    figsize: [10, 6]
+    bins: 20
+    dpi: 100
+
+  comparison_plot:
+    figsize: [10, 6]
+    orientation: "horizontal"  # horizontal or vertical
+
+  colors:
+    pass: "#2ecc71"           # Green
+    fail: "#c0392b"           # Red
+    threshold: "#000000"      # Black
+
+# Multi-Model Comparison
+comparison:
+  max_models: 10
+  enable_ranking: true
+  show_improvement_percentage: true
+
+# Export Settings
+export:
+  include_timestamp: true
+  formats:
+    - csv
+    - json
+    - txt
+  report:
+    include_detailed_stats: true
+    include_per_model_breakdown: true
+    include_visualization_data: false
+
+# UI Settings
+ui:
+  default_input_method: "import_app2"  # import_app2, manual, multi_model, demo
+  show_distribution: true
+  show_detailed_stats: true
+  enable_demo_mode: true
+
+# Demo Mode
+demo:
+  scenarios:
+    - name: "Robust Model (Ideal)"
+      rho_values: [0.3, 0.5, 0.7, 0.4, 0.6, 0.8]
+    - name: "Mixed Performance"
+      rho_values: [0.4, 1.2, 0.6, 1.5, 0.5, 0.9]
+    - name: "Fragile Model"
+      rho_values: [1.5, 2.0, 1.8, 2.3, 1.9, 2.1]
+
+# Import Settings
+import:
+  accepted_formats:
+    - csv
+    - json
+  required_fields:
+    csv: ["Final_RHO"]
+    json: ["summary"]
+  optional_fields:
+    - "Conversation_ID"
+    - "Test_ID"
+
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

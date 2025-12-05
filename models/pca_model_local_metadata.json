@@ -1,0 +1,14 @@
+{
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_dim": 384,
+  "pca_components": 2,
+  "explained_variance": [
+    0.11362648755311966,
+    0.07545513659715652
+  ],
+  "cumulative_variance": [
+    0.11362648755311966,
+    0.18908162415027618
+  ],
+  "training_samples": 50
+}

@@ -71,6 +71,11 @@ API_ENDPOINTS = {
         "url": "https://kv854u79y7.execute-api.us-east-1.amazonaws.com/prod/chat",
         "name": "GPT-3.5",
         "output_dir": "gpt-3.5"
+    },
+    "gpt-4": {
+        "url": "https://1d4qnutnqc.execute-api.us-east-1.amazonaws.com/prod/chat",
+        "name": "GPT-4",
+        "output_dir": "gpt-4"
     }
 }
 
@@ -653,18 +658,21 @@ if __name__ == "__main__":
 Examples:
   # Test all models
   python src/precog_validation_test_api.py
-  
+
   # Test only Mistral Large
   python src/precog_validation_test_api.py --model mistral
-  
-  # Test only Claude Sonnet 4.5
+
+  # Test only Claude Sonnet
   python src/precog_validation_test_api.py --model claude
-  
-  # Test only GPT-OSS 120B
-  python src/precog_validation_test_api.py --model gpt-oss
-  
+
+  # Test only GPT-3.5
+  python src/precog_validation_test_api.py --model gpt-3.5
+
+  # Test only GPT-4
+  python src/precog_validation_test_api.py --model gpt-4
+
   # Test multiple specific models
-  python src/precog_validation_test_api.py --model mistral claude
+  python src/precog_validation_test_api.py --model mistral claude gpt-4
         """
     )
     parser.add_argument('--model', nargs='+', choices=list(API_ENDPOINTS.keys()) + ['all'],
