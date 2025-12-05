@@ -161,108 +161,110 @@ def render_tab1_live_chat(config, orchestrator, llm_client, pca):
     """Render Tab 1: Live Chat + Guardrail Monitoring."""
     st.header("💬 Live Chat with Safety Monitoring")
 
-    # Create two columns
-    col1, col2 = st.columns([1, 1])
+    # ============================================
+    # SECTION 1: CHAT INTERFACE (Full Width)
+    # ============================================
+    st.subheader("Chat Interface")
 
-    with col1:
-        st.subheader("Chat Interface")
+    # Chat view
+    chat_view = create_chat_view()
 
-        # Chat view
-        chat_view = create_chat_view()
+    # Conversation controls
+    start_clicked, end_clicked, export_clicked = chat_view.render_conversation_controls(orchestrator)
 
-        # Conversation controls
-        start_clicked, end_clicked, export_clicked = chat_view.render_conversation_controls(orchestrator)
+    # Handle controls
+    if start_clicked:
+        conv_id = orchestrator.start_new_conversation()
+        SessionState.start_conversation(conv_id)
+        llm_client.clear_history()
+        st.success(f"Started conversation: {conv_id}")
+        st.rerun()
 
-        # Handle controls
-        if start_clicked:
-            conv_id = orchestrator.start_new_conversation()
-            SessionState.start_conversation(conv_id)
-            llm_client.clear_history()
-            st.success(f"Started conversation: {conv_id}")
-            st.rerun()
+    if end_clicked:
+        conv_id = orchestrator.end_conversation()
+        SessionState.end_conversation()
+        st.success(f"Ended conversation: {conv_id}")
+        st.rerun()
 
-        if end_clicked:
-            conv_id = orchestrator.end_conversation()
-            SessionState.end_conversation()
-            st.success(f"Ended conversation: {conv_id}")
-            st.rerun()
+    if export_clicked:
+        # Export conversation
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        export_dir = config['export']['directory']
+        os.makedirs(export_dir, exist_ok=True)
 
-        if export_clicked:
-            # Export conversation
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            export_dir = config['export']['directory']
-            os.makedirs(export_dir, exist_ok=True)
+        conv_id = SessionState.get_current_conversation_id()
+        filepath = os.path.join(export_dir, f"conversation_{conv_id}_{timestamp}.json")
 
-            conv_id = SessionState.get_current_conversation_id()
-            filepath = os.path.join(export_dir, f"conversation_{conv_id}_{timestamp}.json")
+        llm_client.export_conversation(filepath)
+        st.success(f"Exported to {filepath}")
 
-            llm_client.export_conversation(filepath)
-            st.success(f"Exported to {filepath}")
+    st.divider()
 
-        st.divider()
+    # Chat history
+    messages = SessionState.get_chat_history()
+    chat_view.render_chat_history(messages)
 
-        # Chat history
-        messages = SessionState.get_chat_history()
-        chat_view.render_chat_history(messages)
+    # Chat input
+    is_active = SessionState.is_conversation_active()
+    user_input = chat_view.render_input_area(
+        disabled=not is_active,
+        placeholder="Start a conversation to chat..." if not is_active else "Type your message..."
+    )
 
-        # Chat input
-        is_active = SessionState.is_conversation_active()
-        user_input = chat_view.render_input_area(
-            disabled=not is_active,
-            placeholder="Start a conversation to chat..." if not is_active else "Type your message..."
-        )
+    # Handle user input
+    if user_input and is_active:
+        # Add user message to chat history
+        SessionState.add_chat_message('user', user_input)
 
-        # Handle user input
-        if user_input and is_active:
-            # Add user message to chat history
-            SessionState.add_chat_message('user', user_input)
+        # Convert user message to vector
+        user_vector = pca.text_to_2d(user_input)
 
-            # Convert user message to vector
-            user_vector = pca.text_to_2d(user_input)
-
-            # Send to LLM
-            with st.spinner("Thinking..."):
-                response, success = llm_client.send_message(
-                    user_input,
-                    temperature=config['model']['temperature'],
-                    max_tokens=config['model']['max_tokens']
-                )
-
-            if success:
-                # Add model response to chat history
-                SessionState.add_chat_message('assistant', response)
-
-                # Convert model response to vector
-                model_vector = pca.text_to_2d(response)
-
-                # Process turn through pipeline (Stage 1)
-                if user_vector is not None and model_vector is not None:
-                    orchestrator.add_turn(user_input, response, user_vector, model_vector)
-                    logger.info(f"Processed turn through pipeline")
-
-                st.rerun()
-            else:
-                st.error(f"Error: {response}")
-
-    with col2:
-        st.subheader("Safety Monitoring")
-
-        # Live metrics
-        chat_view.render_live_metrics(orchestrator)
-
-        st.divider()
-
-        # Live visualization
-        if SessionState.is_conversation_active():
-            chat_view.render_live_visualization(
-                orchestrator,
-                alert_threshold=config['alerts']['alert_threshold']
+        # Send to LLM
+        with st.spinner("Thinking..."):
+            response, success = llm_client.send_message(
+                user_input,
+                temperature=config['model']['temperature'],
+                max_tokens=config['model']['max_tokens']
             )
 
-        st.divider()
+        if success:
+            # Add model response to chat history
+            SessionState.add_chat_message('assistant', response)
 
-        # Statistics
-        chat_view.render_statistics_panel(orchestrator)
+            # Convert model response to vector
+            model_vector = pca.text_to_2d(response)
+
+            # Process turn through pipeline (Stage 1)
+            if user_vector is not None and model_vector is not None:
+                orchestrator.add_turn(user_input, response, user_vector, model_vector)
+                logger.info(f"Processed turn through pipeline")
+
+            st.rerun()
+        else:
+            st.error(f"Error: {response}")
+
+    # ============================================
+    # SECTION 2: SAFETY MONITORING (Below Chat)
+    # ============================================
+    st.divider()
+    st.subheader("📊 Safety Monitoring & Visualizations")
+
+    # Live metrics in columns
+    chat_view.render_live_metrics(orchestrator)
+
+    st.divider()
+
+    # Live visualization (full width)
+    if SessionState.is_conversation_active():
+        chat_view.render_live_visualization(
+            orchestrator,
+            alert_threshold=config['alerts']['alert_threshold']
+        )
+
+    st.divider()
+
+    # Statistics
+    chat_view.render_statistics_panel(orchestrator)
 
 
 def render_tab2_rho_analysis(config, orchestrator):
@@ -368,7 +370,7 @@ def render_tab2_rho_analysis(config, orchestrator):
 
         # RHO timeline
         try:
-            fig = viz.plot_rho_timeline(metrics_df, epsilon=config['alerts']['epsilon'])
+            fig = viz.plot_rho_timeline(metrics_df)
             st.pyplot(fig)
         except Exception as e:
             st.error(f"Error creating timeline: {e}")
@@ -468,12 +470,12 @@ def render_tab3_phi_benchmark(config, orchestrator):
 
     viz = PHIVisualizer()
 
-    # RHO distribution
+    # RHO distribution (Fragility Distribution)
     rho_values = [c['rho'] for c in conversations_with_rho]
-    test_ids = [c['id'] for c in conversations_with_rho]
+    phi_score = phi_result['phi_score']
 
     try:
-        fig = viz.plot_rho_distribution(rho_values, test_ids)
+        fig = viz.plot_fragility_distribution(rho_values, phi_score)
         st.pyplot(fig)
     except Exception as e:
         st.error(f"Error creating distribution plot: {e}")
