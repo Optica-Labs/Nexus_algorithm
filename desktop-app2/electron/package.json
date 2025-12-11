@@ -1,0 +1,65 @@
+{
+  "name": "vector-precognition-desktop-app4",
+  "version": "2.0.0",
+  "description": "Desktop Application for AI Safety Analysis - Full App4 Integration with ChatGPT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": [
+    "ai-safety",
+    "vector-precognition",
+    "chatgpt",
+    "electron",
+    "desktop",
+    "app4"
+  ],
+  "author": "Optica Labs",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "axios": "^1.6.0"
+  },
+  "build": {
+    "appId": "com.opticalabs.vectorprecognition.app4",
+    "productName": "Vector Precognition App4",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "../python-backend/**/*",
+      "../resources/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../python-backend",
+        "to": "python-backend",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "../resources/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "../resources/icon.icns"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "../resources/icon.png",
+      "category": "Science"
+    }
+  }
+}

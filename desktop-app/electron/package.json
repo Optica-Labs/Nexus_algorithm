@@ -1,0 +1,72 @@
+{
+  "name": "vector-precognition-desktop",
+  "version": "1.0.0",
+  "description": "Desktop application for AI Safety Risk Analysis with ChatGPT integration",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+  "dev": "electron . --dev",
+  "start:app4": "APP_BACKEND=app4_unified_dashboard electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": [
+    "ai-safety",
+    "vector-precognition",
+    "chatgpt",
+    "electron",
+    "desktop"
+  ],
+  "author": "Optica Labs",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "axios": "^1.6.0"
+  },
+  "build": {
+    "appId": "com.opticalabs.vectorprecognition",
+    "productName": "Vector Precognition",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "../python-backend/**/*",
+      "../resources/**/*",
+      "../../deployment/app4_unified_dashboard/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../python-backend",
+        "to": "python-backend",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../deployment/app4_unified_dashboard",
+        "to": "app4_unified_dashboard",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "../resources/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "../resources/icon.icns"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "../resources/icon.png",
+      "category": "Science"
+    }
+  }
+}

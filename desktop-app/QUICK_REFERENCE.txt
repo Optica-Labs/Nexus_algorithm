@@ -1,0 +1,142 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                  UNIFIED DASHBOARD - QUICK REFERENCE                         ║
+║                        Desktop App Deployment                                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🐳 DOCKER DEPLOYMENT (WSL / Headless)                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  📍 LOCATION: desktop-app/
+
+  ▶ QUICK START:
+    ./start-docker-unified.sh
+
+  ▶ MANUAL START:
+    docker-compose -f docker-compose.unified.yml up -d
+
+  ▶ ACCESS:
+    🌐 http://localhost:8501
+
+  ▶ COMMANDS:
+    View logs:  docker-compose -f docker-compose.unified.yml logs -f
+    Stop:       docker-compose -f docker-compose.unified.yml down
+    Restart:    docker-compose -f docker-compose.unified.yml restart
+    Rebuild:    docker-compose -f docker-compose.unified.yml up --build -d
+
+  ▶ DOCUMENTATION:
+    📖 DOCKER_DEPLOYMENT_WSL.md
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🖥️ ELECTRON DESKTOP APP (Native Windows/macOS/Linux)                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  📍 LOCATION: desktop-app/
+
+  ▶ QUICK START:
+    Linux/macOS:  ./start_unified.sh
+    Windows:      .\start_unified.ps1
+
+  ▶ MANUAL START:
+    cd electron
+    npm run start:app4
+
+  ▶ COMMANDS:
+    Development:  npm run dev -- --app=app4_unified_dashboard
+    Build all:    npm run build
+    Build Win:    npm run build:win
+    Build Mac:    npm run build:mac
+    Build Linux:  npm run build:linux
+
+  ▶ DOCUMENTATION:
+    📖 UNIFIED_DASHBOARD_GUIDE.md
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 📋 FILE OVERVIEW                                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ✨ MODIFIED FILES:
+    • desktop-app/electron/main.js          (Backend selection logic)
+    • desktop-app/electron/package.json     (npm scripts & build config)
+
+  🆕 NEW FILES - ELECTRON:
+    • start_unified.sh                      (Linux/macOS launcher)
+    • start_unified.ps1                     (Windows launcher)
+    • UNIFIED_DASHBOARD_GUIDE.md            (Complete Electron guide)
+
+  🆕 NEW FILES - DOCKER:
+    • Dockerfile.unified                    (Docker image)
+    • docker-compose.unified.yml            (Compose config)
+    • docker-run-unified.sh                 (Simple launcher)
+    • start-docker-unified.sh               (Compose launcher)
+    • DOCKER_DEPLOYMENT_WSL.md              (Complete Docker guide)
+
+  🆕 NEW FILES - DOCS:
+    • README_DEPLOYMENT.md                  (Deployment overview)
+    • IMPLEMENTATION_SUMMARY.md             (This summary)
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ⚙️ PREREQUISITES                                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  FOR DOCKER:
+    ✓ Docker Desktop (Windows/macOS) or Docker Engine (Linux)
+    ✓ Docker Compose (included with Docker Desktop)
+
+  FOR ELECTRON:
+    ✓ Node.js 16+ and npm
+    ✓ Python 3.9+ with Streamlit
+    ✓ Requirements from: deployment/app4_unified_dashboard/requirements.txt
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🎯 WHICH ONE TO USE?                                                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Running on WSL?                        → 🐳 Docker
+  Running on Windows Desktop?            → 🖥️ Electron
+  Running on macOS?                      → 🖥️ Electron
+  Running on headless server?            → 🐳 Docker
+  Want browser-based interface?          → 🐳 Docker
+  Want native desktop window?            → 🖥️ Electron
+  Deploying to production cloud?         → 🐳 Docker
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🚨 TROUBLESHOOTING                                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ELECTRON: "libnss3.so not found"
+    → You're in WSL - use Docker instead
+
+  DOCKER: "Cannot connect to Docker daemon"
+    → Start Docker Desktop
+
+  DOCKER: "Port 8501 already in use"
+    → Stop other Streamlit: pkill -f streamlit
+
+  ANY: "Module not found" errors
+    → Install dependencies:
+      pip install -r deployment/app4_unified_dashboard/requirements.txt
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 📚 NEXT STEPS                                                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  1. Choose deployment method (Docker for WSL, Electron for native GUI)
+  2. Run quick start command
+  3. Access the dashboard (browser or desktop window)
+  4. Configure API keys in the UI
+  5. Test with sample conversations
+  6. Review safety monitoring outputs
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  📖 Full Documentation: See README_DEPLOYMENT.md in desktop-app/             ║
+║  🏢 Project: Nexus Algorithm (Optica-Labs)                                   ║
+║  📅 Last Updated: December 11, 2025                                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
