@@ -24,7 +24,6 @@ from datetime import datetime
 import logging
 import numpy as np
 import pandas as pd
-import streamlit.components.v1 as components
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -52,13 +51,10 @@ app3_core = os.path.join(deployment_root, 'app3_phi_evaluator', 'core')
 if app3_core not in sys.path:
     sys.path.insert(0, app3_core)
 
-# Get deployment root for images
-deployment_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 # Page configuration
 st.set_page_config(
     page_title="Unified AI Safety Dashboard",
-    page_icon=os.path.join(deployment_root, 'shared', 'images', '1.png'),
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -74,103 +70,6 @@ from vector_processor import VectorPrecognitionProcessor
 from robustness_calculator import RobustnessCalculator
 from fragility_calculator import FragilityCalculator
 from visualizations import GuardrailVisualizer, RHOVisualizer, PHIVisualizer
-
-
-def show_erosion_alert_popup():
-    """Show beautiful centered popup alert when erosion threshold is exceeded."""
-    # Initialize the session state flag if not exists
-    if 'show_erosion_popup' not in st.session_state:
-        st.session_state.show_erosion_popup = True
-
-    # Check if button was clicked in previous run
-    if st.session_state.get('erosion_btn_clicked_app4', False):
-        st.session_state.show_erosion_popup = False
-        st.session_state.erosion_btn_clicked_app4 = False
-        st.session_state.force_end_conversation = True
-        return
-
-    # Use Streamlit's dialog feature for truly blocking modal
-    @st.dialog("⚠️ SAFETY ALERT", width="large")
-    def erosion_alert_dialog():
-        # Custom CSS for beautiful styling
-        st.markdown("""
-        <style>
-            /* Style the dialog */
-            [data-testid="stDialog"] {
-                background: rgba(0, 0, 0, 0.9) !important;
-            }
-
-            .warning-container {
-                text-align: center;
-                padding: 20px;
-            }
-
-            .warning-icon {
-                font-size: 100px;
-                animation: pulse 2s infinite;
-                display: block;
-                margin-bottom: 20px;
-            }
-
-            @keyframes pulse {
-                0%, 100% {
-                    transform: scale(1);
-                }
-                50% {
-                    transform: scale(1.15);
-                }
-            }
-
-            .alert-title {
-                color: #d63031;
-                font-size: 28px;
-                font-weight: 700;
-                margin-bottom: 20px;
-                text-transform: uppercase;
-                letter-spacing: 2px;
-            }
-
-            .alert-message {
-                color: #2d3436;
-                font-size: 18px;
-                line-height: 1.8;
-                margin-bottom: 25px;
-                padding: 20px;
-                background: #ffe5e5;
-                border-radius: 10px;
-                border-left: 5px solid #ff6b6b;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # Modal content
-        st.markdown("""
-        <div class="warning-container">
-            <div class="warning-icon">⚠️</div>
-            <div class="alert-title">AI Guardrail Erosion Threshold Exceeded</div>
-            <div class="alert-message">
-                This model is approaching a break of its assigned guardrails.<br><br>
-                <strong>Please close this context window and restart your conversation in a new instance.</strong>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Center the button
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button(
-                "✓ I Understand",
-                type="primary",
-                use_container_width=True,
-                key="erosion_understand_btn_app4"
-            ):
-                # Set flag that button was clicked
-                st.session_state.erosion_btn_clicked_app4 = True
-                st.rerun()
-
-    # Only show dialog if flag is True
-    if st.session_state.show_erosion_popup:
-        erosion_alert_dialog()
 
 
 def initialize_app():
@@ -262,124 +161,108 @@ def render_tab1_live_chat(config, orchestrator, llm_client, pca):
     """Render Tab 1: Live Chat + Guardrail Monitoring."""
     st.header("💬 Live Chat with Safety Monitoring")
 
-    # ============================================
-    # SECTION 1: CHAT INTERFACE (Full Width)
-    # ============================================
-    st.subheader("Chat Interface")
+    # Create two columns
+    col1, col2 = st.columns([1, 1])
 
-    # Chat view
-    chat_view = create_chat_view()
+    with col1:
+        st.subheader("Chat Interface")
 
-    # Check if we need to force end conversation due to erosion alert
-    if st.session_state.get('force_end_conversation', False):
-        if orchestrator.current_conversation_id:
+        # Chat view
+        chat_view = create_chat_view()
+
+        # Conversation controls
+        start_clicked, end_clicked, export_clicked = chat_view.render_conversation_controls(orchestrator)
+
+        # Handle controls
+        if start_clicked:
+            conv_id = orchestrator.start_new_conversation()
+            SessionState.start_conversation(conv_id)
+            llm_client.clear_history()
+            st.success(f"Started conversation: {conv_id}")
+            st.rerun()
+
+        if end_clicked:
             conv_id = orchestrator.end_conversation()
             SessionState.end_conversation()
-            llm_client.clear_history()
-            st.session_state.force_end_conversation = False
-            st.success("⚠️ Previous conversation ended due to safety alert. Please start a new conversation.")
+            st.success(f"Ended conversation: {conv_id}")
             st.rerun()
 
-    # Conversation controls
-    start_clicked, end_clicked, export_clicked = chat_view.render_conversation_controls(orchestrator)
+        if export_clicked:
+            # Export conversation
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            export_dir = config['export']['directory']
+            os.makedirs(export_dir, exist_ok=True)
 
-    # Handle controls
-    if start_clicked:
-        conv_id = orchestrator.start_new_conversation()
-        SessionState.start_conversation(conv_id)
-        llm_client.clear_history()
-        st.success(f"Started conversation: {conv_id}")
-        st.rerun()
+            conv_id = SessionState.get_current_conversation_id()
+            filepath = os.path.join(export_dir, f"conversation_{conv_id}_{timestamp}.json")
 
-    if end_clicked:
-        conv_id = orchestrator.end_conversation()
-        SessionState.end_conversation()
-        st.success(f"Ended conversation: {conv_id}")
-        st.rerun()
+            llm_client.export_conversation(filepath)
+            st.success(f"Exported to {filepath}")
 
-    if export_clicked:
-        # Export conversation
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        export_dir = config['export']['directory']
-        os.makedirs(export_dir, exist_ok=True)
+        st.divider()
 
-        conv_id = SessionState.get_current_conversation_id()
-        filepath = os.path.join(export_dir, f"conversation_{conv_id}_{timestamp}.json")
+        # Chat history
+        messages = SessionState.get_chat_history()
+        chat_view.render_chat_history(messages)
 
-        llm_client.export_conversation(filepath)
-        st.success(f"Exported to {filepath}")
-
-    st.divider()
-
-    # Chat history
-    messages = SessionState.get_chat_history()
-    chat_view.render_chat_history(messages)
-
-    # Chat input
-    is_active = SessionState.is_conversation_active()
-    user_input = chat_view.render_input_area(
-        disabled=not is_active,
-        placeholder="Start a conversation to chat..." if not is_active else "Type your message..."
-    )
-
-    # Handle user input
-    if user_input and is_active:
-        # Add user message to chat history
-        SessionState.add_chat_message('user', user_input)
-
-        # Convert user message to vector
-        user_vector = pca.text_to_2d(user_input)
-
-        # Send to LLM
-        with st.spinner("Thinking..."):
-            response, success = llm_client.send_message(
-                user_input,
-                temperature=config['model']['temperature'],
-                max_tokens=config['model']['max_tokens']
-            )
-
-        if success:
-            # Add model response to chat history
-            SessionState.add_chat_message('assistant', response)
-
-            # Convert model response to vector
-            model_vector = pca.text_to_2d(response)
-
-            # Process turn through pipeline (Stage 1)
-            if user_vector is not None and model_vector is not None:
-                orchestrator.add_turn(user_input, response, user_vector, model_vector)
-                logger.info(f"Processed turn through pipeline")
-
-            st.rerun()
-        else:
-            st.error(f"Error: {response}")
-
-    # ============================================
-    # SECTION 2: SAFETY MONITORING (Below Chat)
-    # ============================================
-    st.divider()
-    st.subheader("📊 Safety Monitoring & Visualizations")
-
-    # Live metrics in columns
-    chat_view.render_live_metrics(
-        orchestrator,
-        erosion_threshold=config['alerts']['erosion_threshold'],
-        user_risk_threshold=config['alerts']['user_risk_threshold']
-    )
-
-    st.divider()
-
-    # Live visualization (full width)
-    if SessionState.is_conversation_active():
-        chat_view.render_live_visualization(
-            orchestrator,
-            alert_threshold=config['alerts']['alert_threshold']
+        # Chat input
+        is_active = SessionState.is_conversation_active()
+        user_input = chat_view.render_input_area(
+            disabled=not is_active,
+            placeholder="Start a conversation to chat..." if not is_active else "Type your message..."
         )
 
-    st.divider()
+        # Handle user input
+        if user_input and is_active:
+            # Add user message to chat history
+            SessionState.add_chat_message('user', user_input)
 
-    # Statistics
-    chat_view.render_statistics_panel(orchestrator)
+            # Convert user message to vector
+            user_vector = pca.text_to_2d(user_input)
+
+            # Send to LLM
+            with st.spinner("Thinking..."):
+                response, success = llm_client.send_message(
+                    user_input,
+                    temperature=config['model']['temperature'],
+                    max_tokens=config['model']['max_tokens']
+                )
+
+            if success:
+                # Add model response to chat history
+                SessionState.add_chat_message('assistant', response)
+
+                # Convert model response to vector
+                model_vector = pca.text_to_2d(response)
+
+                # Process turn through pipeline (Stage 1)
+                if user_vector is not None and model_vector is not None:
+                    orchestrator.add_turn(user_input, response, user_vector, model_vector)
+                    logger.info(f"Processed turn through pipeline")
+
+                st.rerun()
+            else:
+                st.error(f"Error: {response}")
+
+    with col2:
+        st.subheader("Safety Monitoring")
+
+        # Live metrics
+        chat_view.render_live_metrics(orchestrator)
+
+        st.divider()
+
+        # Live visualization
+        if SessionState.is_conversation_active():
+            chat_view.render_live_visualization(
+                orchestrator,
+                alert_threshold=config['alerts']['alert_threshold']
+            )
+
+        st.divider()
+
+        # Statistics
+        chat_view.render_statistics_panel(orchestrator)
 
 
 def render_tab2_rho_analysis(config, orchestrator):
@@ -718,15 +601,9 @@ def render_tab4_settings(config, orchestrator):
 
 def main():
     """Main application entry point."""
-    # Title with logo on the RIGHT
-    col_title, col_logo = st.columns([7, 3])
-    with col_title:
-        st.title("Unified AI Safety Dashboard")
-        st.caption("End-to-end AI safety monitoring with Vector Precognition")
-    with col_logo:
-        logo_path = os.path.join(deployment_root, 'shared', 'images', '1.png')
-        if os.path.exists(logo_path):
-            st.image(logo_path)
+    # Title
+    st.title("🛡️ Unified AI Safety Dashboard")
+    st.caption("End-to-end AI safety monitoring with Vector Precognition")
 
     # Initialize app
     try:

@@ -14,8 +14,203 @@ import numpy as np
 from typing import Optional, Tuple
 import logging
 from datetime import datetime
+import streamlit.components.v1 as components
 
 logger = logging.getLogger(__name__)
+
+
+def show_user_risk_alert_popup():
+    """Show alert popup when user accumulated risk is too high."""
+    # Initialize the session state flag if not exists
+    if 'show_user_risk_popup' not in st.session_state:
+        st.session_state.show_user_risk_popup = True
+
+    # Check if button was clicked in previous run
+    if st.session_state.get('user_risk_btn_clicked_chat', False):
+        st.session_state.show_user_risk_popup = False
+        st.session_state.user_risk_btn_clicked_chat = False
+        st.session_state.force_end_conversation = True
+        return
+
+    # Use Streamlit's dialog feature for truly blocking modal
+    @st.dialog("⚠️ USER RISK ALERT", width="large")
+    def user_risk_alert_dialog():
+        # Custom CSS for beautiful styling
+        st.markdown("""
+        <style>
+            /* Style the dialog */
+            [data-testid="stDialog"] {
+                background: rgba(0, 0, 0, 0.9) !important;
+            }
+
+            .warning-container {
+                text-align: center;
+                padding: 20px;
+            }
+
+            .warning-icon {
+                font-size: 100px;
+                animation: pulse 2s infinite;
+                display: block;
+                margin-bottom: 20px;
+            }
+
+            @keyframes pulse {
+                0%, 100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.15);
+                }
+            }
+
+            .alert-title {
+                color: #e67e22;
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 20px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+
+            .alert-message {
+                color: #2d3436;
+                font-size: 18px;
+                line-height: 1.8;
+                margin-bottom: 25px;
+                padding: 20px;
+                background: #fff3cd;
+                border-radius: 10px;
+                border-left: 5px solid #e67e22;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Modal content
+        st.markdown("""
+        <div class="warning-container">
+            <div class="warning-icon">🚨</div>
+            <div class="alert-title">User Policy Violation Warning</div>
+            <div class="alert-message">
+                Your prompts indicate a possible policy or guardrail violation.<br><br>
+                <strong>Please review your company's use policies before proceeding.</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Center the button
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button(
+                "✓ I Understand",
+                type="primary",
+                use_container_width=True,
+                key="user_risk_understand_btn_chatview"
+            ):
+                # Set flag that button was clicked
+                st.session_state.user_risk_btn_clicked_chat = True
+                st.rerun()
+
+    # Only show dialog if flag is True
+    if st.session_state.show_user_risk_popup:
+        user_risk_alert_dialog()
+
+
+def show_erosion_alert_popup():
+    """Show beautiful centered popup alert when erosion threshold is exceeded."""
+    # Initialize the session state flag if not exists
+    if 'show_erosion_popup' not in st.session_state:
+        st.session_state.show_erosion_popup = True
+
+    # Check if button was clicked in previous run
+    if st.session_state.get('erosion_btn_clicked_chat', False):
+        st.session_state.show_erosion_popup = False
+        st.session_state.erosion_btn_clicked_chat = False
+        st.session_state.force_end_conversation = True
+        return
+
+    # Use Streamlit's dialog feature for truly blocking modal
+    @st.dialog("⚠️ SAFETY ALERT", width="large")
+    def erosion_alert_dialog():
+        # Custom CSS for beautiful styling
+        st.markdown("""
+        <style>
+            /* Style the dialog */
+            [data-testid="stDialog"] {
+                background: rgba(0, 0, 0, 0.9) !important;
+            }
+
+            .warning-container {
+                text-align: center;
+                padding: 20px;
+            }
+
+            .warning-icon {
+                font-size: 100px;
+                animation: pulse 2s infinite;
+                display: block;
+                margin-bottom: 20px;
+            }
+
+            @keyframes pulse {
+                0%, 100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.15);
+                }
+            }
+
+            .alert-title {
+                color: #d63031;
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 20px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+
+            .alert-message {
+                color: #2d3436;
+                font-size: 18px;
+                line-height: 1.8;
+                margin-bottom: 25px;
+                padding: 20px;
+                background: #ffe5e5;
+                border-radius: 10px;
+                border-left: 5px solid #ff6b6b;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Modal content
+        st.markdown("""
+        <div class="warning-container">
+            <div class="warning-icon">⚠️</div>
+            <div class="alert-title">AI Guardrail Erosion Threshold Exceeded</div>
+            <div class="alert-message">
+                This model is approaching a break of its assigned guardrails.<br><br>
+                <strong>Please close this context window and restart your conversation in a new instance.</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Center the button
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button(
+                "✓ I Understand",
+                type="primary",
+                use_container_width=True,
+                key="erosion_understand_btn_chatview"
+            ):
+                # Set flag that button was clicked
+                st.session_state.erosion_btn_clicked_chat = True
+                st.rerun()
+
+    # Only show dialog if flag is True
+    if st.session_state.show_erosion_popup:
+        erosion_alert_dialog()
 
 
 class ChatView:
@@ -78,12 +273,14 @@ class ChatView:
 
         return user_input
 
-    def render_live_metrics(self, orchestrator):
+    def render_live_metrics(self, orchestrator, erosion_threshold: float = 0.15, user_risk_threshold: float = 2.0):
         """
         Render live metrics panel showing current conversation risk.
 
         Args:
             orchestrator: PipelineOrchestrator instance
+            erosion_threshold: Threshold for erosion alerts
+            user_risk_threshold: Threshold for user risk alerts
         """
         st.subheader("📊 Live Safety Metrics")
 
@@ -129,6 +326,29 @@ class ChatView:
                 value=f"{peak_likelihood:.1%}",
                 delta=None
             )
+
+        # Check for USER RISK first (highest priority)
+        metrics_df = orchestrator.get_stage1_metrics()
+        if len(metrics_df) > 0:
+            # Check cumulative user risk
+            if 'CumulativeRisk_User' in metrics_df.columns:
+                cumulative_user_risk = metrics_df['CumulativeRisk_User'].iloc[-1]
+                if cumulative_user_risk > user_risk_threshold:
+                    st.error(f"🚨 USER RISK ALERT: Your cumulative risk ({cumulative_user_risk:.3f}) exceeds threshold!")
+                    st.warning("⚠️ Your prompts indicate possible policy violations. Review company use policies.")
+                    # Reset flag and show popup alert
+                    st.session_state.show_user_risk_popup = True
+                    show_user_risk_alert_popup()
+                    return  # Don't check erosion if user risk alert is shown
+
+            # Check for erosion breaches
+            if 'GuardrailErosion_a(N)' in metrics_df.columns:
+                erosion_breaches = (metrics_df['GuardrailErosion_a(N)'].abs() > erosion_threshold).sum()
+                if erosion_breaches > 0:
+                    st.error(f"🚨 EROSION ALERT: {erosion_breaches} turn(s) exceeded erosion threshold!")
+                    # Reset flag and show popup alert
+                    st.session_state.show_erosion_popup = True
+                    show_erosion_alert_popup()
 
         # Risk status indicator
         if peak_likelihood >= 0.8:

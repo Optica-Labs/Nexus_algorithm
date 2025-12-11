@@ -301,6 +301,28 @@ class Sidebar:
         else:
             st.caption("🟢 Lenient (low sensitivity)")
 
+        # Erosion threshold
+        erosion_threshold = st.slider(
+            "Erosion Alert Threshold",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.15,
+            step=0.01,
+            help="Trigger alert when guardrail erosion exceeds this value",
+            key="sidebar_erosion_threshold"
+        )
+
+        # User Risk Threshold (NEW)
+        user_risk_threshold = st.slider(
+            "User Risk Alert Threshold",
+            min_value=0.0,
+            max_value=5.0,
+            value=2.0,
+            step=0.1,
+            help="🚨 Alert when accumulated user risk exceeds this value. Monitors user's prompt safety",
+            key="sidebar_user_risk_threshold"
+        )
+
         # Epsilon for RHO calculation
         epsilon = st.number_input(
             "Epsilon (ε)",
@@ -325,6 +347,8 @@ class Sidebar:
 
         return {
             'alert_threshold': alert_threshold,
+            'erosion_threshold': erosion_threshold,
+            'user_risk_threshold': user_risk_threshold,
             'epsilon': epsilon,
             'phi_threshold': phi_threshold
         }

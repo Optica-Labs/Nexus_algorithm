@@ -35,6 +35,7 @@ import json
 import requests
 from typing import Dict, List, Optional, Tuple
 import logging
+import streamlit.components.v1 as components
 
 # Import shared modules
 from shared.config import (
@@ -63,7 +64,7 @@ logger = logging.getLogger(__name__)
 # Page configuration
 st.set_page_config(
     page_title="Guardrail Erosion Analyzer",
-    page_icon="🛡️",
+    page_icon=str(deployment_root / 'shared' / 'images' / '1.png'),
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -89,6 +90,212 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+def show_user_risk_alert_popup():
+    """Show alert popup when user accumulated risk is too high."""
+    # Initialize the session state flag if not exists
+    if 'show_user_risk_popup' not in st.session_state:
+        st.session_state.show_user_risk_popup = True
+
+    # Check if button was clicked in previous run
+    if st.session_state.get('user_risk_btn_clicked', False):
+        st.session_state.show_user_risk_popup = False
+        st.session_state.user_risk_btn_clicked = False
+        # Clear all conversation data
+        st.session_state.metrics_df = None
+        st.session_state.statistics = None
+        st.session_state.processor = None
+        st.session_state.parsed_messages = None
+        if 'api_conversation' in st.session_state:
+            st.session_state.api_conversation = []
+        return
+
+    # Use Streamlit's dialog feature for truly blocking modal
+    @st.dialog("⚠️ USER RISK ALERT", width="large")
+    def user_risk_alert_dialog():
+        # Custom CSS for beautiful styling
+        st.markdown("""
+        <style>
+            /* Style the dialog */
+            [data-testid="stDialog"] {
+                background: rgba(0, 0, 0, 0.9) !important;
+            }
+
+            .warning-container {
+                text-align: center;
+                padding: 20px;
+            }
+
+            .warning-icon {
+                font-size: 100px;
+                animation: pulse 2s infinite;
+                display: block;
+                margin-bottom: 20px;
+            }
+
+            @keyframes pulse {
+                0%, 100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.15);
+                }
+            }
+
+            .alert-title {
+                color: #e67e22;
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 20px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+
+            .alert-message {
+                color: #2d3436;
+                font-size: 18px;
+                line-height: 1.8;
+                margin-bottom: 25px;
+                padding: 20px;
+                background: #fff3cd;
+                border-radius: 10px;
+                border-left: 5px solid #e67e22;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Modal content
+        st.markdown("""
+        <div class="warning-container">
+            <div class="warning-icon">🚨</div>
+            <div class="alert-title">User Policy Violation Warning</div>
+            <div class="alert-message">
+                Your prompts indicate a possible policy or guardrail violation.<br><br>
+                <strong>Please review your company's use policies before proceeding.</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Center the button
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button(
+                "✓ I Understand",
+                type="primary",
+                use_container_width=True,
+                key="user_risk_understand_btn"
+            ):
+                # Set flag that button was clicked
+                st.session_state.user_risk_btn_clicked = True
+                st.rerun()
+
+    # Only show dialog if flag is True
+    if st.session_state.show_user_risk_popup:
+        user_risk_alert_dialog()
+
+
+def show_erosion_alert_popup():
+    """Show beautiful centered popup alert when erosion threshold is exceeded."""
+    # Initialize the session state flag if not exists
+    if 'show_erosion_popup' not in st.session_state:
+        st.session_state.show_erosion_popup = True
+
+    # Check if button was clicked in previous run
+    if st.session_state.get('erosion_btn_clicked', False):
+        st.session_state.show_erosion_popup = False
+        st.session_state.erosion_btn_clicked = False
+        # Clear all conversation data
+        st.session_state.metrics_df = None
+        st.session_state.statistics = None
+        st.session_state.processor = None
+        st.session_state.parsed_messages = None
+        if 'api_conversation' in st.session_state:
+            st.session_state.api_conversation = []
+        return
+
+    # Use Streamlit's dialog feature for truly blocking modal
+    @st.dialog("⚠️ SAFETY ALERT", width="large")
+    def erosion_alert_dialog():
+        # Custom CSS for beautiful styling
+        st.markdown("""
+        <style>
+            /* Style the dialog */
+            [data-testid="stDialog"] {
+                background: rgba(0, 0, 0, 0.9) !important;
+            }
+
+            .warning-container {
+                text-align: center;
+                padding: 20px;
+            }
+
+            .warning-icon {
+                font-size: 100px;
+                animation: pulse 2s infinite;
+                display: block;
+                margin-bottom: 20px;
+            }
+
+            @keyframes pulse {
+                0%, 100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.15);
+                }
+            }
+
+            .alert-title {
+                color: #d63031;
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 20px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+
+            .alert-message {
+                color: #2d3436;
+                font-size: 18px;
+                line-height: 1.8;
+                margin-bottom: 25px;
+                padding: 20px;
+                background: #ffe5e5;
+                border-radius: 10px;
+                border-left: 5px solid #ff6b6b;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Modal content
+        st.markdown("""
+        <div class="warning-container">
+            <div class="warning-icon">⚠️</div>
+            <div class="alert-title">AI Guardrail Erosion Threshold Exceeded</div>
+            <div class="alert-message">
+                This model is approaching a break of its assigned guardrails.<br><br>
+                <strong>Please close this context window and restart your conversation in a new instance.</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Center the button
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button(
+                "✓ I Understand",
+                type="primary",
+                use_container_width=True,
+                key="erosion_understand_btn"
+            ):
+                # Set flag that button was clicked
+                st.session_state.erosion_btn_clicked = True
+                st.rerun()
+
+    # Only show dialog if flag is True
+    if st.session_state.show_erosion_popup:
+        erosion_alert_dialog()
 
 
 def initialize_session_state():
@@ -208,6 +415,15 @@ def sidebar_configuration():
         help="⚠️ Alert when Guardrail Erosion a(N) exceeds this value. Lower = More sensitive (0.15 recommended)"
     )
 
+    # User Risk Threshold (NEW)
+    user_risk_threshold = st.sidebar.slider(
+        "User Risk Alert Threshold",
+        min_value=0.0, max_value=5.0,
+        value=2.0,
+        step=0.1,
+        help="🚨 Alert when accumulated user risk exceeds this value. Monitors user's prompt safety (2.0 recommended)"
+    )
+
     # Visual threshold indicator
     st.sidebar.markdown("---")
     st.sidebar.caption("**Current Alert Sensitivity:**")
@@ -224,7 +440,8 @@ def sidebar_configuration():
         'weights': weights,
         'vsafe_text': vsafe_text,
         'likelihood_threshold': likelihood_threshold,
-        'erosion_threshold': erosion_threshold
+        'erosion_threshold': erosion_threshold,
+        'user_risk_threshold': user_risk_threshold
     }
 
 
@@ -576,6 +793,7 @@ def process_conversation(messages: Dict[str, List[str]], config: Dict):
             st.session_state.processor = processor
             st.session_state.likelihood_threshold = config.get('likelihood_threshold', 0.8)
             st.session_state.erosion_threshold = config.get('erosion_threshold', 0.15)
+            st.session_state.user_risk_threshold = config.get('user_risk_threshold', 2.0)
 
             st.success("✓ Analysis complete!")
 
@@ -603,16 +821,30 @@ def display_results():
     # Get thresholds from session state (set during process_conversation)
     likelihood_threshold = st.session_state.get('likelihood_threshold', 0.8)
     erosion_threshold = st.session_state.get('erosion_threshold', 0.15)
+    user_risk_threshold = st.session_state.get('user_risk_threshold', 2.0)
 
     # Calculate threshold breaches
     likelihood_breaches = (metrics_df['Likelihood_L(N)'] > likelihood_threshold).sum()
     erosion_breaches = (metrics_df['GuardrailErosion_a(N)'].abs() > erosion_threshold).sum()
+
+    # Check accumulated user risk
+    cumulative_user_risk = statistics.get('cumulative_user_risk', 0.0)
+    user_risk_exceeded = cumulative_user_risk > user_risk_threshold
+
     total_turns = len(metrics_df)
 
     st.header("📊 Analysis Results")
 
+    # Show USER RISK alert first (highest priority)
+    if user_risk_exceeded:
+        st.error(f"🚨 **USER RISK ALERT:** Cumulative user risk ({cumulative_user_risk:.3f}) exceeds threshold ({user_risk_threshold:.1f})")
+        st.warning("⚠️ Your prompts indicate possible policy violations. Review company use policies.")
+        # Reset the popup flag to show it again for this analysis
+        st.session_state.show_user_risk_popup = True
+        show_user_risk_alert_popup()
+
     # Alert Banner (if any thresholds breached)
-    if likelihood_breaches > 0 or erosion_breaches > 0:
+    elif likelihood_breaches > 0 or erosion_breaches > 0:
         alert_col1, alert_col2 = st.columns([1, 5])
         with alert_col1:
             st.markdown("### 🚨")
@@ -624,6 +856,12 @@ def display_results():
                 alert_messages.append(f"**{erosion_breaches}** Erosion alerts")
 
             st.error(f"⚠️ **ALERTS DETECTED:** {' | '.join(alert_messages)}")
+
+        # Show popup alert if erosion threshold is exceeded (only once per analysis)
+        if erosion_breaches > 0:
+            # Reset the popup flag to show it again for this analysis
+            st.session_state.show_erosion_popup = True
+            show_erosion_alert_popup()
 
     # Statistics Cards
     col1, col2, col3, col4 = st.columns(4)
@@ -753,17 +991,29 @@ def main():
 
     initialize_session_state()
 
-    # Header
-    st.markdown('<p class="main-header">🛡️ Guardrail Erosion Analyzer</p>', unsafe_allow_html=True)
-    st.markdown("**Analyze AI conversation safety through guardrail erosion and risk velocity metrics**")
+    # Header with logo on the RIGHT
+    col_title, col_logo = st.columns([7, 3])
+    with col_title:
+        st.markdown('<p class="main-header">Guardrail Erosion Analyzer</p>', unsafe_allow_html=True)
+        st.markdown("**Analyze AI conversation safety through guardrail erosion and risk velocity metrics**")
+    with col_logo:
+        logo_path = deployment_root / 'shared' / 'images' / '1.png'
+        if logo_path.exists():
+            st.image(str(logo_path))
 
     st.divider()
 
     # Sidebar configuration
     config = sidebar_configuration()
 
-    # Main content - Input Selection
-    st.header("📥 Input Conversation")
+    # Main content - Input Selection with icon
+    icon_col, header_col = st.columns([0.5, 9.5])
+    with icon_col:
+        icon_path = deployment_root / 'shared' / 'images' / '2.png'
+        if icon_path.exists():
+            st.image(str(icon_path), width=40)
+    with header_col:
+        st.header("Input Conversation")
 
     input_method = st.radio(
         "Select Input Method:",

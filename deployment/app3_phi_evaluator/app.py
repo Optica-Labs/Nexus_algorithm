@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 # Page configuration
 st.set_page_config(
     page_title="PHI Evaluator",
-    page_icon="🎯",
+    page_icon=str(deployment_root / 'shared' / 'images' / '1.png'),
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -533,9 +533,15 @@ def main():
     """Main application entry point."""
     initialize_session_state()
 
-    # Header
-    st.markdown('<p class="main-header">🎯 PHI Evaluator</p>', unsafe_allow_html=True)
-    st.markdown("**Model Fragility Benchmark - Calculate PHI (Φ) Score**")
+    # Header with logo on the RIGHT
+    col_title, col_logo = st.columns([7, 3])
+    with col_title:
+        st.markdown('<p class="main-header">PHI Evaluator</p>', unsafe_allow_html=True)
+        st.markdown("**Model Fragility Benchmark - Calculate PHI (Φ) Score**")
+    with col_logo:
+        logo_path = deployment_root / 'shared' / 'images' / '1.png'
+        if logo_path.exists():
+            st.image(str(logo_path))
 
     st.info("""
     **PHI (Φ) Formula**: Φ = (1/N) × Σ max(0, ρ - 1)
@@ -550,8 +556,14 @@ def main():
     # Sidebar configuration
     config = sidebar_configuration()
 
-    # Main content - Input Selection
-    st.header("📥 Input Model Results")
+    # Main content - Input Selection with icon
+    icon_col, header_col = st.columns([0.5, 9.5])
+    with icon_col:
+        icon_path = deployment_root / 'shared' / 'images' / '2.png'
+        if icon_path.exists():
+            st.image(str(icon_path), width=40)
+    with header_col:
+        st.header("Input Model Results")
 
     input_method = st.radio(
         "Select Input Method:",
