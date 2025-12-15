@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const fs = require('fs');
 const Store = require('electron-store');
 const axios = require('axios');
 
@@ -30,8 +31,31 @@ function startPythonBackend() {
   // Get stored OpenAI API key and pass to environment
   const apiKey = store.get('openai_api_key', '');
 
+  // Determine python executable: prefer env override, then venv python, then 'python'
+  let pythonExec = process.env.PYTHON || process.env.PYTHON_BIN || 'python';
+
+  // If a venv exists under the backend path, prefer its python executable
+  try {
+    const venvPython = path.join(backendPath, 'venv', 'bin', 'python');
+    if (fs.existsSync(venvPython)) {
+      pythonExec = venvPython;
+    }
+  } catch (e) {
+    // ignore and fall back to env or system python
+  }
+
+  console.log(`Using python executable: ${pythonExec}`);
+
   // Start Streamlit server
-  pythonProcess = spawn('python', [
+  // Choose a safe working directory for the child process. If pythonExec is
+  // an absolute path that exists, use its directory as cwd so we avoid
+  // spawning from inside the Electron app bundle which can cause permission
+  // or translocation issues on macOS.
+  const spawnCwd = (path.isAbsolute(pythonExec) && fs.existsSync(pythonExec))
+    ? path.dirname(pythonExec)
+    : backendPath;
+
+  pythonProcess = spawn(pythonExec, [
     '-m', 'streamlit', 'run',
     path.join(backendPath, 'app.py'),
     '--server.port', STREAMLIT_PORT.toString(),
@@ -39,7 +63,7 @@ function startPythonBackend() {
     '--browser.gatherUsageStats', 'false',
     '--server.address', 'localhost'
   ], {
-    cwd: backendPath,
+    cwd: spawnCwd,
     env: {
       ...process.env,
       PYTHONUNBUFFERED: '1',
