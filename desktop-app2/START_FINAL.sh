@@ -43,10 +43,10 @@ echo "============================================="
 echo "Starting Vector Precognition Desktop App2"
 echo ""
 echo "  Open your browser to:"
-echo "    http://localhost:8501"
+echo "    http://localhost:8502"
 echo ""
 echo "  Press Ctrl+C to stop"
 echo "============================================="
 echo ""
 
-streamlit run app.py --server.port 8501 --server.headless true --browser.gatherUsageStats false
+streamlit run app.py --server.port 8502 --server.headless true --browser.gatherUsageStats false

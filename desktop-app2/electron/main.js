@@ -11,7 +11,7 @@ const store = new Store({
 
 let mainWindow;
 let pythonProcess;
-const STREAMLIT_PORT = 8501;
+const STREAMLIT_PORT = 8502;
 const STREAMLIT_URL = `http://localhost:${STREAMLIT_PORT}`;
 
 /**

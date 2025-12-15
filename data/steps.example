@@ -1,0 +1,13 @@
+# Steps Template
+# Copy this file to 'steps' and add your actual configuration
+# NEVER commit the 'steps' file if it contains API keys!
+
+# This is a template file for the steps configuration
+# Replace placeholder values with your actual keys/settings
+
+Step 1: Configure API keys in deployment/.env
+Step 2: Train PCA models: python src/pca_trainer.py
+Step 3: Test with manual mode: python src/vector_precognition_demo.py --mode manual
+Step 4: Test with text mode: python src/vector_precognition_demo.py --mode text
+
+# For more information, see README.md

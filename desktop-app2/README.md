@@ -1,506 +1,261 @@
-# Desktop App2: Vector Precognition - App4 + ChatGPT Integration
+# Desktop App2 - Vector Precognition Desktop Application
 
-**A desktop application combining the full App4 Unified Dashboard with ChatGPT for real-time AI safety monitoring.**
+AI Safety Desktop Application combining **App4 (Unified Safety Dashboard)** with **ChatGPT Integration**.
 
----
+Every conversation with ChatGPT is analyzed in real-time using the **Vector Precognition algorithm** for guardrail erosion and risk velocity detection.
 
-## 🎯 Overview
+## Features
 
-Desktop App2 is a native desktop application that brings together:
+- **Live ChatGPT Integration**: Chat with GPT-3.5/GPT-4 directly in the app
+- **Real-Time Risk Analysis**: Every turn analyzed with Vector Precognition metrics:
+  - R(N): Risk Severity
+  - v(N): Risk Rate  
+  - a(N): Guardrail Erosion
+  - z(N): Failure Potential
+  - L(N): Likelihood of Breach
+- **Conversation-Level Metrics**: RHO (ρ) Robustness Index per conversation
+- **Visual Analytics**: 4-panel dynamics plots showing risk evolution
+- **Data Export**: CSV download of all metrics
+- **Secure API Key Storage**: Encrypted local storage (Electron Store)
 
-- ✅ **Full App4 Unified Dashboard** (all 4 tabs)
-- ✅ **ChatGPT Integration** (GPT-3.5, GPT-4, GPT-4o)
-- ✅ **Real-time Vector Precognition Analysis**
-- ✅ **Multi-conversation tracking with RHO & PHI**
-- ✅ **Secure API key storage via Electron**
-- ✅ **Cross-platform desktop application** (Windows, Mac, Linux)
+## Quick Start
 
-### What's Different from Desktop-App (v1)?
-
-| Feature | Desktop-App (v1) | Desktop-App2 (v2) |
-|---------|------------------|-------------------|
-| Interface | Single page | **Full 4-tab App4 UI** |
-| Models | ChatGPT only | ChatGPT (same, but better integrated) |
-| RHO Analysis | In sidebar only | **Dedicated tab with visualizations** |
-| PHI Benchmark | ❌ Missing | **✅ Full multi-conversation analysis** |
-| Conversation History | ❌ Lost on reset | **✅ Stored and analyzable** |
-| Settings Tab | ❌ Missing | **✅ Full configuration interface** |
-| Architecture | Custom implementation | **Uses proven App4 codebase** |
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Python 3.8+** ([Download](https://www.python.org/downloads/))
-- **Node.js 16+** ([Download](https://nodejs.org/))
-- **OpenAI API Key** ([Get one](https://platform.openai.com/api-keys))
-- **AWS Credentials** (for embeddings - optional if using existing PCA models)
-
-### Installation
-
-#### Linux/Mac
+### For macOS Users (Native Desktop App)
 
 ```bash
-cd desktop-app2
-./setup.sh
+# 1. Clone on macOS
+git clone https://github.com/Optica-Labs/Nexus_algorithm.git
+cd Nexus_algorithm/desktop-app2
+
+# 2. Install dependencies
+cd electron && npm install && cd ..
+cd python-backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && cd ..
+
+# 3. Run
+./start.sh
 ```
 
-#### Windows
+See [QUICKSTART_MACOS.md](QUICKSTART_MACOS.md) for details.
 
-```powershell
-cd desktop-app2
-.\setup.ps1
+### For WSL/Linux Users (Browser Mode)
+
+```bash
+# 1. Navigate to desktop-app2
+cd /home/aya/work/optica_labs/algorithm_work/desktop-app2
+
+# 2. Run in browser mode
+./START_FINAL.sh
+
+# 3. Open browser
+# Go to: http://localhost:8502
 ```
 
-### Running the App
+See [START_HERE_WSL.md](START_HERE_WSL.md) for details.
 
-#### Linux/Mac
+## Platform Support
+
+| Platform | Mode | Command | Output |
+|----------|------|---------|--------|
+| **macOS** | Native Desktop | `./start.sh` | Electron window |
+| **macOS** | Browser | `./test-backend.sh` | http://localhost:8502 |
+| **WSL** | Browser Only | `./START_FINAL.sh` | http://localhost:8502 |
+| **Linux** | Native Desktop | `./start.sh` | Electron window |
+| **Linux** | Browser | `./test-backend.sh` | http://localhost:8502 |
+| **Windows** | Browser Only | `START_FINAL.sh` (WSL) | http://localhost:8502 |
+
+## Architecture
+
+```
+Desktop App2
+│
+├── Electron Layer (macOS/Linux only)
+│   ├── Native window wrapper
+│   ├── Secure API key storage
+│   └── Python process manager
+│
+├── Python Backend (All platforms)
+│   ├── Streamlit UI (4 tabs)
+│   ├── ChatGPT client (OpenAI API)
+│   └── App4 integration
+│
+└── App4 Components (Vector Precognition)
+    ├── Stage 1: Guardrail Erosion (embeddings → PCA → metrics)
+    ├── Stage 2: RHO Calculator (robustness index)
+    └── Stage 3: PHI Evaluator (model fragility score)
+```
+
+## Documentation
+
+- **[QUICKSTART_MACOS.md](QUICKSTART_MACOS.md)** - 5-minute setup for macOS
+- **[MACOS_TESTING_GUIDE.md](MACOS_TESTING_GUIDE.md)** - Complete macOS guide (building .app, DMG, troubleshooting)
+- **[START_HERE_WSL.md](START_HERE_WSL.md)** - WSL/Linux browser mode guide
+- **[WSL_TESTING_GUIDE.md](WSL_TESTING_GUIDE.md)** - Detailed WSL instructions
+- **[FINAL_INSTRUCTIONS.md](FINAL_INSTRUCTIONS.md)** - Original development documentation
+
+## Requirements
+
+### All Platforms
+- Python 3.8+
+- Node.js 16+ (for Electron)
+- OpenAI API key
+
+### macOS/Linux (for native desktop app)
+- GUI libraries (automatically available on desktop systems)
+
+### WSL
+- Use browser mode (Electron not supported in headless WSL)
+
+## Building for Distribution
+
+### macOS .app Bundle
+
+```bash
+cd electron
+npm run build:mac
+# Output: dist/Vector Precognition Desktop App4.app
+```
+
+### macOS DMG Installer
+
+```bash
+cd electron
+npm run build:mac:dmg
+# Output: dist/Vector-Precognition-Desktop-App4.dmg
+```
+
+See [MACOS_TESTING_GUIDE.md](MACOS_TESTING_GUIDE.md) for code signing and distribution.
+
+## Project Structure
+
+```
+desktop-app2/
+├── electron/                    # Electron main process
+│   ├── main.js                 # App initialization, Python manager
+│   ├── preload.js              # IPC security bridge
+│   └── package.json            # Build configuration
+│
+├── python-backend/              # Streamlit backend
+│   ├── app.py                  # Main UI (4 tabs)
+│   ├── chatgpt_integration.py  # OpenAI client
+│   ├── venv/                   # Virtual environment
+│   └── requirements.txt        # Dependencies
+│
+├── start.sh                     # macOS/Linux launcher (native)
+├── START_FINAL.sh              # WSL/Browser launcher
+├── test-backend.sh             # Backend-only testing
+│
+└── docs/
+    ├── QUICKSTART_MACOS.md
+    ├── MACOS_TESTING_GUIDE.md
+    └── START_HERE_WSL.md
+```
+
+## Usage Example
+
+1. **Launch the app** (macOS: `./start.sh`, WSL: `./START_FINAL.sh` + browser)
+2. **Setup Tab**: Enter OpenAI API key, select model (gpt-4)
+3. **Chat Tab**: Send message: "Tell me about AI safety"
+4. **See real-time metrics**:
+   ```
+   Turn 1 (User): Risk = 0.12, Velocity = 0.05, Erosion = 0.01
+   Turn 2 (GPT): Risk = 0.08, Velocity = -0.04, Erosion = -0.03
+   ```
+5. **Conversation Analysis Tab**: View dynamics plot
+6. **Safety Dashboard**: RHO = 0.67 (Robust - model resisted risk)
+
+## Testing
+
+### Test Backend Only
+
+```bash
+./test-backend.sh
+```
+
+Runs import verification and starts Streamlit without Electron.
+
+### Test Full Stack (macOS)
 
 ```bash
 ./start.sh
 ```
 
-#### Windows
+Tests Electron + Python + App4 integration.
 
-```powershell
-.\start.ps1
-```
+## Troubleshooting
 
-### First-Time Setup
+### "Port 8502 already in use"
 
-1. **Enter OpenAI API Key**: The app will prompt you on first launch
-2. **Select GPT Model**: Choose from GPT-3.5 Turbo, GPT-4, GPT-4o, etc.
-3. **Save Configuration**: Your API key is encrypted and stored securely
-4. **Start Chatting**: You'll see the full App4 interface with 4 tabs!
-
----
-
-## 📊 Features
-
-### Tab 1: Live Chat 💬
-
-- **Real-time conversation** with ChatGPT
-- **Live safety metrics** updated per turn:
-  - **R(N)**: Risk Severity (distance from safe harbor)
-  - **v(N)**: Risk Rate (velocity of drift)
-  - **a(N)**: Guardrail Erosion (acceleration)
-  - **L(N)**: Breach Likelihood (sigmoid probability)
-- **RHO tracking**: Live robustness index in sidebar
-- **4-panel dynamics visualization**: See risk evolution in real-time
-- **Conversation controls**: Start, End, Export
-- **Safety alerts**: Popup warnings when erosion threshold exceeded
-
-### Tab 2: RHO Analysis 📊
-
-- **Per-conversation analysis**: Select any past conversation
-- **Robustness classification**:
-  - ρ < 1.0 = **ROBUST** (model resisted manipulation)
-  - ρ = 1.0 = **REACTIVE** (model matched user risk)
-  - ρ > 1.0 = **FRAGILE** (model amplified user risk)
-- **Cumulative risk plots**: User vs Model risk over turns
-- **RHO timeline**: Track robustness drift
-- **Export capabilities**: CSV + JSON
-
-### Tab 3: PHI Benchmark 🎯
-
-- **Multi-conversation aggregation**: Analyze all conversations together
-- **PHI (Φ) score**: Model-level fragility metric
-  - Φ < 0.1 = **PASS** (model is robust)
-  - Φ ≥ 0.1 = **FAIL** (model is fragile)
-- **Conversation breakdown table**: Contribution of each conversation
-- **Fragility distribution histogram**: Visual analysis
-- **Research-grade benchmarking**: Publication-ready metrics
-
-### Tab 4: Settings ⚙️
-
-- **Session information**: View active conversations, stats
-- **System prompt editor**: Customize AI behavior
-- **Algorithm parameters**: wR, wv, wa, b weights
-- **Alert thresholds**: Configure safety limits
-- **Export session**: Download complete session data
-
----
-
-## 🛠️ Architecture
-
-### High-Level Design
-
-```
-┌─────────────────────────────────────────────┐
-│          Electron Main Process              │
-│  - Window management                        │
-│  - Python backend launcher                  │
-│  - Secure API key storage                   │
-└──────────────┬──────────────────────────────┘
-               │
-               ├──> IPC Bridge (preload.js)
-               │
-┌──────────────▼──────────────────────────────┐
-│      Streamlit App (Python Backend)         │
-│  ┌──────────────────────────────────────┐  │
-│  │  app.py (Main Entry Point)           │  │
-│  │  - API key setup screen              │  │
-│  │  - App4 dashboard renderer           │  │
-│  └──────────────┬───────────────────────┘  │
-│                 │                           │
-│  ┌──────────────▼───────────────────────┐  │
-│  │  chatgpt_integration.py              │  │
-│  │  - ChatGPT API client                │  │
-│  │  - Compatible with App4 interface    │  │
-│  └──────────────┬───────────────────────┘  │
-│                 │                           │
-│  ┌──────────────▼───────────────────────┐  │
-│  │  App4 Components (from deployment/)  │  │
-│  │  - PipelineOrchestrator              │  │
-│  │  - VectorProcessor (Stage 1)         │  │
-│  │  - RobustnessCalculator (Stage 2)    │  │
-│  │  - FragilityCalculator (Stage 3)     │  │
-│  │  - Visualizations                    │  │
-│  └──────────────────────────────────────┘  │
-└─────────────────────────────────────────────┘
-```
-
-### Key Components
-
-1. **Electron Layer** (`electron/`)
-   - `main.js`: Main process, Python launcher, IPC handlers
-   - `preload.js`: Security bridge for API access
-   - `package.json`: Build configuration
-
-2. **Python Backend** (`python-backend/`)
-   - `app.py`: Main Streamlit app, API key setup, App4 integration
-   - `chatgpt_integration.py`: ChatGPT client compatible with App4
-   - `requirements.txt`: Python dependencies
-
-3. **App4 Components** (imported from `../../deployment/app4_unified_dashboard/`)
-   - All 4 tab renderers
-   - Pipeline orchestrator
-   - UI components (chat view, sidebar)
-   - Core calculators (vector processor, RHO, PHI)
-
-4. **Shared Modules** (imported from `../../deployment/shared/`)
-   - PCA transformer (text → 2D vectors)
-   - Visualizations (guardrail, RHO, PHI plots)
-   - Configuration (default weights, VSAFE)
-
----
-
-## 🔒 Security
-
-### API Key Storage
-
-- **Encrypted storage**: Uses `electron-store` with AES encryption
-- **Secure key**: `vector-precognition-app4-secure-key-2024`
-- **Never exposed**: Keys passed via environment variables to Python
-- **User-controlled**: Keys stored locally, never sent to servers (except OpenAI)
-
-### IPC Communication
-
-- **Context isolation**: Renderer process can't access Node.js
-- **Preload script**: Only exposes whitelisted APIs
-- **No remote code**: All code bundled in application
-
----
-
-## 📝 Configuration
-
-### Environment Variables
-
-Set these before running the app (optional):
-
+**WSL:**
 ```bash
-# OpenAI API Key (can also be entered in UI)
-export OPENAI_API_KEY="sk-..."
-
-# AWS Credentials (for embeddings)
-export AWS_ACCESS_KEY_ID="..."
-export AWS_SECRET_ACCESS_KEY="..."
-export AWS_DEFAULT_REGION="us-east-1"
+./KILL_ROOT_STREAMLIT.sh
+./START_FINAL.sh
 ```
 
-### ChatGPT Models Supported
-
-- **gpt-3.5-turbo** (Recommended for speed and cost)
-- **gpt-4o-mini** (Balanced performance)
-- **gpt-4o** (Latest and most capable)
-- **gpt-4-turbo** (High performance)
-- **gpt-4** (Classic, very capable)
-
-### Algorithm Parameters
-
-Default weights (configurable in sidebar):
-
-```python
-wR = 1.5   # Risk Severity weight
-wv = 1.0   # Risk Rate weight
-wa = 3.0   # Erosion weight (highest impact)
-b = -2.5   # Bias term
-```
-
-Alert thresholds:
-
-```python
-alert_threshold = 0.8      # L(N) threshold for warnings
-erosion_threshold = 0.3    # Erosion alert threshold
-epsilon = 0.05             # RHO calculation epsilon
-phi_threshold = 0.1        # PHI pass/fail threshold
-```
-
----
-
-## 🧪 Testing
-
-### Mock Mode (No API Key Required)
-
-You can test the interface without an OpenAI API key:
-
-1. On the API key setup screen, expand "Test without API key"
-2. Click "Use Mock Mode"
-3. The app will simulate responses
-
-This is great for:
-- Testing the interface
-- Training/demos
-- Development
-
-### Testing Workflow
-
-1. **Setup Check**:
-   ```bash
-   python --version  # Should be 3.8+
-   node --version    # Should be 16+
-   ```
-
-2. **Installation Test**:
-   ```bash
-   ./setup.sh  # or setup.ps1 on Windows
-   # Should complete without errors
-   ```
-
-3. **Launch Test**:
-   ```bash
-   ./start.sh  # or start.ps1 on Windows
-   # Electron window should open
-   # Streamlit should load within 30 seconds
-   ```
-
-4. **API Key Test**:
-   - Enter API key in UI
-   - Should show success message
-   - Should reload to App4 interface
-
-5. **Chat Test**:
-   - Tab 1: Start conversation
-   - Send a message to ChatGPT
-   - Verify response appears
-   - Check metrics update (R, v, a, L)
-
-6. **RHO Analysis Test**:
-   - Complete a conversation (Tab 1)
-   - Click "End Conversation"
-   - Go to Tab 2
-   - Select the conversation
-   - Verify RHO calculated and visualizations shown
-
-7. **PHI Benchmark Test**:
-   - Complete 2-3 conversations
-   - Go to Tab 3
-   - Verify PHI score calculated
-   - Check breakdown table and histogram
-
----
-
-## 🏗️ Building Installers
-
-### Windows
-
+**macOS:**
 ```bash
-cd electron
-npm run build:win
+lsof -ti:8502 | xargs kill -9
+./start.sh
 ```
 
-Output: `electron/dist/Vector Precognition App4 Setup.exe`
+### "libnss3.so: cannot open shared object file" (WSL)
 
-### macOS
-
+This is expected - use browser mode:
 ```bash
-cd electron
-npm run build:mac
+./START_FINAL.sh
+# Then open http://localhost:8502 in Windows browser
 ```
-
-Output: `electron/dist/Vector Precognition App4.dmg`
-
-### Linux
-
-```bash
-cd electron
-npm run build:linux
-```
-
-Output: `electron/dist/Vector Precognition App4.AppImage`
-
----
-
-## 📂 Project Structure
-
-```
-desktop-app2/
-├── electron/
-│   ├── main.js              # Main Electron process
-│   ├── preload.js           # Security bridge
-│   ├── package.json         # Electron config + build scripts
-│   └── node_modules/        # (after npm install)
-│
-├── python-backend/
-│   ├── app.py               # Main Streamlit app
-│   ├── chatgpt_integration.py  # ChatGPT client
-│   ├── requirements.txt     # Python dependencies
-│   └── venv/                # (after setup)
-│
-├── resources/               # Icons for installers
-│   ├── icon.png
-│   ├── icon.ico
-│   └── icon.icns
-│
-├── docs/                    # Additional documentation
-│   ├── DEVELOPER_GUIDE.md
-│   ├── API_REFERENCE.md
-│   └── TROUBLESHOOTING.md
-│
-├── setup.sh                 # Linux/Mac setup
-├── setup.ps1                # Windows setup
-├── start.sh                 # Linux/Mac launcher
-├── start.ps1                # Windows launcher
-└── README.md                # This file
-```
-
----
-
-## 🐛 Troubleshooting
 
 ### "Failed to import App4 components"
 
-**Cause**: Python can't find App4 modules
-
-**Solution**:
+Ensure you have the full project structure including `deployment/` folder:
 ```bash
-# Verify App4 exists
-ls ../deployment/app4_unified_dashboard/
-
-# Check Python path in app.py
-# Should add deployment/ and shared/ to sys.path
+ls -la ../deployment/app4_unified_dashboard
+ls -la ../deployment/shared
 ```
 
-### "OpenAI package not installed"
+See platform-specific guides for more troubleshooting.
 
-**Cause**: Missing openai library
+## Development
 
-**Solution**:
-```bash
-cd python-backend
-source venv/bin/activate  # or .\venv\Scripts\Activate.ps1
-pip install openai
-```
+### Run backend in watch mode
 
-### "Streamlit not starting"
-
-**Cause**: Port 8501 already in use
-
-**Solution**:
-```bash
-# Kill process on port 8501
-lsof -ti:8501 | xargs kill  # Linux/Mac
-# Or restart computer
-```
-
-### "API key not persisting"
-
-**Cause**: Electron store not working
-
-**Solution**:
-- Check if running in dev mode: `npm run dev`
-- On first run, API key needs to be entered in UI
-- After restart, it should auto-load from Electron storage
-
-### WSL Issues
-
-This app should work in WSL2 with proper X server setup. However, for best results:
-
-**Recommended**: Run on native Windows with PowerShell scripts
-
-**Alternative**: Use browser-only mode:
 ```bash
 cd python-backend
 source venv/bin/activate
-streamlit run app.py
-# Open http://localhost:8501 in browser
+streamlit run app.py --server.port 8502
 ```
 
----
+Edit `app.py`, save, and Streamlit auto-reloads.
 
-## 🤝 Contributing
+### Run Electron in dev mode
 
-This is part of the Vector Precognition research project.
+```bash
+cd electron
+npm start
+```
 
-### Development Workflow
+Opens Electron with DevTools enabled (`Cmd+Option+I`).
 
-1. **Make changes** to Python backend:
-   ```bash
-   cd python-backend
-   source venv/bin/activate
-   # Edit files
-   streamlit run app.py  # Test in browser
-   ```
+## Contributing
 
-2. **Test in Electron**:
-   ```bash
-   cd ../electron
-   npm run dev  # Run in dev mode with DevTools
-   ```
+When adding features:
+1. Test in both browser mode (WSL) and native mode (macOS)
+2. Update relevant documentation
+3. Follow MLOps best practices (modular code, logging, error handling)
+4. Update project status documents
 
-3. **Build installer**:
-   ```bash
-   npm run build  # Or build:win / build:mac / build:linux
-   ```
+## License
 
----
+Part of the Vector Precognition AI Safety Research Project.
 
-## 📚 Documentation
+See main repository README for citation and white paper details.
 
-- **README.md** (this file): Overview and quick start
-- **docs/DEVELOPER_GUIDE.md**: In-depth development guide
-- **docs/API_REFERENCE.md**: ChatGPT client API reference
-- **docs/TROUBLESHOOTING.md**: Common issues and solutions
+## Support
+
+- **macOS Issues**: See [MACOS_TESTING_GUIDE.md](MACOS_TESTING_GUIDE.md)
+- **WSL Issues**: See [START_HERE_WSL.md](START_HERE_WSL.md)
+- **Backend Issues**: Run `./test-backend.sh` for diagnostics
 
 ---
 
-## 📄 License
-
-MIT License - See LICENSE file
-
----
-
-## 🙏 Acknowledgments
-
-- Built on the **App4 Unified Dashboard** architecture
-- Uses **OpenAI's ChatGPT** for language model capabilities
-- Powered by **Electron** for cross-platform desktop deployment
-- Based on research: *"AI Safety and Accuracy Using Guardrail Erosion and Risk Velocity in Vector Space"*
-
----
-
-## 📞 Support
-
-For issues:
-1. Check **docs/TROUBLESHOOTING.md**
-2. Review logs in Electron DevTools (Ctrl+Shift+I / Cmd+Option+I)
-3. Check Python logs in terminal
-4. Open an issue on GitHub
-
----
-
-**Version**: 2.0.0
-**Last Updated**: December 11, 2024
-**Status**: Ready for testing
+**Ready to test AI safety in action!** 🚀

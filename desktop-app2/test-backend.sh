@@ -36,7 +36,7 @@ fi
 
 echo ""
 echo "Starting Streamlit backend..."
-echo "Once started, open your browser to: http://localhost:8501"
+echo "Once started, open your browser to: http://localhost:8502"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
@@ -44,4 +44,4 @@ echo "========================================="
 echo ""
 
 cd python-backend
-streamlit run app.py --server.port 8501 --server.headless true --browser.gatherUsageStats false
+streamlit run app.py --server.port 8502 --server.headless true --browser.gatherUsageStats false
