@@ -1,0 +1,1 @@
+cd /home/aya/work/optica_labs/algorithm_work && python src/vector_precognition_demo.py --conversations input/prototype_data.json
