@@ -74,6 +74,7 @@ from vector_processor import VectorPrecognitionProcessor
 from robustness_calculator import RobustnessCalculator
 from fragility_calculator import FragilityCalculator
 from visualizations import GuardrailVisualizer, RHOVisualizer, PHIVisualizer
+from sycophancy_tab_integration import render_tab5_sycophancy_analysis, update_sycophancy_analyzer_with_turn
 
 
 def show_erosion_alert_popup():
@@ -742,10 +743,11 @@ def main():
         return
 
     # Create tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "💬 Live Chat",
         "📊 RHO Analysis",
         "🎯 PHI Benchmark",
+        "🎭 Sycophancy",
         "⚙️ Settings"
     ])
 
@@ -759,6 +761,9 @@ def main():
         render_tab3_phi_benchmark(config, orchestrator)
 
     with tab4:
+        render_tab5_sycophancy_analysis(config, orchestrator, pca)
+
+    with tab5:
         render_tab4_settings(config, orchestrator)
 
 
